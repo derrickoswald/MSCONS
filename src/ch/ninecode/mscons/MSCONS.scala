@@ -11,6 +11,9 @@ import java.nio.ByteBuffer
 // was: BufferedInputStream
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
+    // stupid scala syntax to "import" the companion object with the constant declarations
+    import ch.ninecode.mscons.MSCONS._
+
     // See http://www.unece.org/trade/untdid/d99a/trmd/mscons_c.htm
     // and also see http://www.unece.org/cefact/edifact/welcome.html
     // and http://www.edi-energy.de/files2/MSCONS_MIG_2_2e_Lesefassung_2015_09_15_2015_09_11.pdf from Bundesverbandes der Energie- und Wasserwirtschaft e.V. ("BDEW" https://bdew.de)
@@ -75,12 +78,12 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     /**
      * Extract one segment
      */
-    def parseSegment (terminator: Int): ByteBuffer =
+    def parse (buf: ByteBuffer, term: Int): ByteBuffer =
     {
-        var length = buffer.limit
+        var length = buf.limit
         var skip = false
         var stop = false
-        var start = buffer.position
+        var start = buf.position
         var size = 0
         var c = 0
         var intervals = List[Tuple2[Int,Int]] () // start and size of each piece of the segment
@@ -88,12 +91,12 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
 
         do
         {
-            c = buffer.get.asInstanceOf[Int]
+            c = buf.get.asInstanceOf[Int]
             size += 1
             stop = false
             if (skip)
             {
-                if (c == terminator)
+                if (c == term)
                 {
                     intervals = intervals :+ (start, size - 2)
                     start = start + size - 1
@@ -102,7 +105,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                 skip = false
             }
             else
-                if (c == terminator)
+                if (c == term)
                     stop = true
                 else
                     if (c == release_character)
@@ -114,10 +117,10 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         if (1 == intervals.length)
         {
             // just slice out the one piece to avoid reallocation
-            buffer.position (intervals.head._1)
-            ret = buffer.slice ()
+            buf.position (intervals.head._1)
+            ret = buf.slice ()
             ret.limit (intervals.head._2)
-            buffer.position (intervals.head._1 + intervals.head._2 + (if (stop) 1 else 0))
+            buf.position (intervals.head._1 + intervals.head._2 + (if (stop) 1 else 0))
         }
         else
         {
@@ -127,13 +130,13 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             intervals.map (
                 (item) =>
                 {
-                    buffer.position (item._1)
-                    buffer.get (bytes, offset, item._2)
+                    buf.position (item._1)
+                    buf.get (bytes, offset, item._2)
                     offset += item._2
                 }
             )
             if (stop)
-                buffer.get // discard terminator
+                buf.get // discard terminator
             ret = ByteBuffer.wrap (bytes)
         }
 
@@ -143,10 +146,6 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     // Check for summary section
     // optional CNT Control totals (99)
     // mandatory single UNT Message trailer
-
-    val TrailerTrigger1 = "UNT".getBytes ("UTF-8")
-    val TrailerTrigger2 = "UNZ".getBytes ("UTF-8")
-    val TrailerTrigger3 = "CNT".getBytes ("UTF-8")
 
     def isTrailer (seg: ByteBuffer): Boolean =
     {
@@ -158,27 +157,45 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
 
         var ret = false
 
-        if (b0 == TrailerTrigger1(0))
+        if (b0 == UNT(0))
         {
-            if (b1 == TrailerTrigger1(1))
-                if (b2 == TrailerTrigger1(2))
+            if (b1 == UNT(1))
+                if (b2 == UNT(2))
                     ret = true
         }
-        else if (b0 == TrailerTrigger2(0))
+        else if (b0 == UNZ(0))
         {
-            if (b1 == TrailerTrigger2(1))
-                if (b2 == TrailerTrigger2(2))
+            if (b1 == UNZ(1))
+                if (b2 == UNZ(2))
                     ret = true
         }
-        else if (b0 == TrailerTrigger3(0))
+        else if (b0 == CNT(0))
         {
-            if (b1 == TrailerTrigger3(1))
-                if (b2 == TrailerTrigger3(2))
+            if (b1 == CNT(1))
+                if (b2 == CNT(2))
                     ret = true
         }
 
         return (ret)
     }
+
+    def parseAll (seg: ByteBuffer, terminator: Int): List[ByteBuffer] =
+    {
+        var ret = List[ByteBuffer] ()
+
+        do
+        {
+            val part = parse (seg, terminator)
+            ret = ret :+ part
+        }
+        while (0 < seg.remaining)
+
+        return (ret)
+    }
+
+    def ParseData (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, data_element_separator)
+
+    def ParseComponents (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, component_data_element_separator)
 
     def parseReadings ()
     {
@@ -195,7 +212,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                 repeat = false
             else
                 // isolate the next message segment
-                seg = parseSegment (segment_terminator)
+                seg = parse (buffer, segment_terminator)
 
 
             // TODO: make into a state machine as an array of objects with two methods operate(segment) and step(n)
@@ -372,6 +389,10 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
 
 object MSCONS
 {
+    final val UNT = "UNT".getBytes ("UTF-8")
+    final val UNZ = "UNZ".getBytes ("UTF-8")
+    final val CNT = "CNT".getBytes ("UTF-8")
+
     /**
      * Main program for testing purposes.
      */

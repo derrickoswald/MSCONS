@@ -72,7 +72,7 @@ class MSCONSSuite extends FunSuite
         assert ('.' == mscons.decimal_notification)
         assert ('?' == mscons.release_character)
         assert (';' == mscons.segment_terminator)
-        val seg = mscons.parseSegment (mscons.segment_terminator)
+        val seg = mscons.parse (mscons.buffer, mscons.segment_terminator)
         assert ("XYZ" == segToString (seg))
         assert (1 == mscons.buffer.remaining)
     }
@@ -113,7 +113,7 @@ class MSCONSSuite extends FunSuite
         assert ('.' == mscons.decimal_notification)
         assert ('?' == mscons.release_character)
         assert ('\'' == mscons.segment_terminator)
-        val seg = mscons.parseSegment (mscons.segment_terminator)
+        val seg = mscons.parse (mscons.buffer, mscons.segment_terminator)
         assert ("XY'Z" == segToString (seg))
         assert (1 == mscons.buffer.remaining)
     }
@@ -128,7 +128,7 @@ class MSCONSSuite extends FunSuite
         assert ('.' == mscons.decimal_notification)
         assert ('\\' == mscons.release_character)
         assert ('\'' == mscons.segment_terminator)
-        val seg = mscons.parseSegment (mscons.segment_terminator)
+        val seg = mscons.parse (mscons.buffer, mscons.segment_terminator)
         assert ("XY'Z" == segToString (seg))
         assert (1 == mscons.buffer.remaining)
     }
