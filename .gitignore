@@ -1,0 +1,7 @@
+/bin/
+/.garbage/
+.cache-main
+.cache-tests
+
+/target/
+/project/
