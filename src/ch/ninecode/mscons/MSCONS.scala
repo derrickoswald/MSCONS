@@ -21,6 +21,26 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     var release_character = "?".codePointAt (0)
     var segment_terminator = "'".codePointAt (0)
 
+    /**
+     * Convert a ByteBuffer into a string using UTF-8 encoding.
+     * A convenience function to drain the buffer as if it was a
+     * UTF-8 encoded string.
+     * @param buffer - the buffer to convert, which will be exhausted
+     * @return the string value of the buffer as UTF-8 characters
+     */
+    def segToString (buffer: ByteBuffer): String =
+    {
+        val ret = if (buffer.hasArray && !buffer.isReadOnly)
+            new String (buffer.array, buffer.arrayOffset, buffer.limit, "UTF-8")
+        else
+        {
+            val bytes = new Array[Byte] (buffer.remaining)
+            buffer.get (bytes)
+            new String (bytes, "UTF-8")
+        }
+        return (ret)
+    }
+
     // Parse the optional UNA segment if present.
     // See http://en.wikipedia.org/wiki/EDIFACT
     // There are six characters following UNA in this order (default in brackets):
@@ -55,7 +75,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     /**
      * Extract one segment
      */
-    def parseSegment (terminator: Int): Array[Byte] = // ByteBuffer =
+    def parseSegment (terminator: Int): ByteBuffer =
     {
         var length = buffer.limit
         var skip = false
@@ -64,6 +84,8 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var size = 0
         var c = 0
         var intervals = List[Tuple2[Int,Int]] () // start and size of each piece of the segment
+        var ret: ByteBuffer = null
+
         do
         {
             c = buffer.get.asInstanceOf[Int]
@@ -88,20 +110,34 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         }
         while ((size <= length) && !stop)
         intervals = intervals :+ (start, if (stop) size - 1 else size)
-        val ret = new Array[Byte] (intervals.map (_._2).sum)
-        // copy the data piece by piece
-        var offset = 0
-        intervals.map (
-            (item) =>
-            {
-                buffer.position (item._1)
-                buffer.get (ret, offset, item._2)
-                offset += item._2
-            }
-        )
-        if (stop)
-            buffer.get // discard terminator
-        return (ret) // (ByteBuffer.wrap (ret))
+
+        if (1 == intervals.length)
+        {
+            // just slice out the one piece to avoid reallocation
+            buffer.position (intervals.head._1)
+            ret = buffer.slice ()
+            ret.limit (intervals.head._2)
+            buffer.position (intervals.head._1 + intervals.head._2 + (if (stop) 1 else 0))
+        }
+        else
+        {
+            // copy the data piece by piece to a new array
+            val bytes = new Array[Byte] (intervals.map (_._2).sum)
+            var offset = 0
+            intervals.map (
+                (item) =>
+                {
+                    buffer.position (item._1)
+                    buffer.get (bytes, offset, item._2)
+                    offset += item._2
+                }
+            )
+            if (stop)
+                buffer.get // discard terminator
+            ret = ByteBuffer.wrap (bytes)
+        }
+
+        return (ret)
     }
 
     // Check for summary section
@@ -112,9 +148,35 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     val TrailerTrigger2 = "UNZ".getBytes ("UTF-8")
     val TrailerTrigger3 = "CNT".getBytes ("UTF-8")
 
-    def isTrailer (seg: Array[Byte]): Boolean =
+    def isTrailer (seg: ByteBuffer): Boolean =
     {
-        var ret = seg.startsWith (TrailerTrigger1) || seg.startsWith (TrailerTrigger2) || seg.startsWith (TrailerTrigger3)
+        seg.mark
+        val b0 = seg.get ()
+        val b1 = seg.get ()
+        val b2 = seg.get ()
+        seg.reset
+
+        var ret = false
+
+        if (b0 == TrailerTrigger1(0))
+        {
+            if (b1 == TrailerTrigger1(1))
+                if (b2 == TrailerTrigger1(2))
+                    ret = true
+        }
+        else if (b0 == TrailerTrigger2(0))
+        {
+            if (b1 == TrailerTrigger2(1))
+                if (b2 == TrailerTrigger2(2))
+                    ret = true
+        }
+        else if (b0 == TrailerTrigger3(0))
+        {
+            if (b1 == TrailerTrigger3(1))
+                if (b2 == TrailerTrigger3(2))
+                    ret = true
+        }
+
         return (ret)
     }
 
@@ -126,7 +188,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var name = ""
         var state = 0
         var record = null
-        var seg: Array[Byte] = null
+        var seg: ByteBuffer = null
         do
         {
             if (repeat)
