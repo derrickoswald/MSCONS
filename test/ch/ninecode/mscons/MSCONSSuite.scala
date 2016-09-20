@@ -103,7 +103,7 @@ class MSCONSSuite extends FunSuite
         assert (4 == mscons.buffer.remaining)
     }
 
-    test ("Segment with release character default")
+    test ("segment with release character default")
     {
         val buffer = ByteBuffer.wrap ("XY?'Z'A".getBytes)
         val mscons = new MSCONS (buffer)
@@ -118,7 +118,7 @@ class MSCONSSuite extends FunSuite
         assert (1 == mscons.buffer.remaining)
     }
 
-    test ("Segment with release character special")
+    test ("segment with release character special")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.\\ 'XY\\'Z'A".getBytes)
         val mscons = new MSCONS (buffer)
@@ -131,6 +131,44 @@ class MSCONSSuite extends FunSuite
         val seg = mscons.parse (mscons.buffer, mscons.segment_terminator)
         assert ("XY'Z" == segToString (seg))
         assert (1 == mscons.buffer.remaining)
+    }
+
+    test ("multi-segment")
+    {
+        val buffer = ByteBuffer.wrap ("UNA:+.? 'FOO'BAR'".getBytes)
+        val mscons = new MSCONS (buffer)
+        mscons.parseUNA ()
+        val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
+        assert (2 == segs.length)
+        assert (0 == mscons.buffer.remaining)
+        assert ("FOO" == segToString (segs.head))
+        assert ("BAR" == segToString (segs.tail.head))
+    }
+
+    test ("multi-segment truncated")
+    {
+        val buffer = ByteBuffer.wrap ("UNA:+.? 'FOO'BA".getBytes)
+        val mscons = new MSCONS (buffer)
+        mscons.parseUNA ()
+        val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
+        assert (2 == segs.length)
+        assert (0 == mscons.buffer.remaining)
+        assert ("FOO" == segToString (segs.head))
+        assert ("BA" == segToString (segs.tail.head))
+    }
+
+    test ("data with release character")
+    {
+        val buffer = ByteBuffer.wrap ("UNA:+.? 'DTM+163:200901010000?+01:303'".getBytes)
+        val mscons = new MSCONS (buffer)
+        mscons.parseUNA ()
+        val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
+        assert (1 == segs.length)
+        assert (0 == mscons.buffer.remaining)
+        val data = mscons.parseData (segs.head)
+        assert (2 == data.length)
+        assert ("DTM" == segToString (data.head))
+        assert ("163:200901010000+01:303" == segToString (data.tail.head))
     }
 
 }

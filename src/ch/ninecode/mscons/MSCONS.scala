@@ -7,12 +7,13 @@ import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.nio.file.FileSystems
 import java.nio.ByteBuffer
+import java.util.regex.Pattern
 
 // was: BufferedInputStream
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
-    // stupid scala syntax to "import" the companion object with the constant declarations
-    import ch.ninecode.mscons.MSCONS._
+    // stupid funky scala syntax to "import" the companion object constant declarations
+    import MSCONS._
 
     // See http://www.unece.org/trade/untdid/d99a/trmd/mscons_c.htm
     // and also see http://www.unece.org/cefact/edifact/welcome.html
@@ -42,6 +43,28 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             new String (bytes, "UTF-8")
         }
         return (ret)
+    }
+
+    /**
+     * Convert a ByteBuffer into a number.
+     * A convenience function to drain the buffer as if it was a
+     * UTF-8 encoded string representation of a decimal number.
+     * @param buffer - the buffer to convert, which will be exhausted
+     * @return the integer value of the buffer
+     */
+    def segToNumber (buffer: ByteBuffer): Int =
+    {
+        var ret = 0
+        while (0 < buffer.remaining)
+            ret = ret * 10 + (buffer.get () - '0')
+        return (ret)
+    }
+
+    def debugPrint (buffer: ByteBuffer): Unit =
+    {
+        buffer.mark
+        println (segToString (buffer))
+        buffer.reset
     }
 
     // Parse the optional UNA segment if present.
@@ -80,7 +103,6 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
      */
     def parse (buf: ByteBuffer, term: Int): ByteBuffer =
     {
-        var length = buf.limit
         var skip = false
         var stop = false
         var start = buf.position
@@ -89,7 +111,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var intervals = List[Tuple2[Int,Int]] () // start and size of each piece of the segment
         var ret: ByteBuffer = null
 
-        do
+        while ((0 < buf.remaining) && !stop)
         {
             c = buf.get.asInstanceOf[Int]
             size += 1
@@ -111,7 +133,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                     if (c == release_character)
                         skip = true
         }
-        while ((size <= length) && !stop)
+
         intervals = intervals :+ (start, if (stop) size - 1 else size)
 
         if (1 == intervals.length)
@@ -179,23 +201,176 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         return (ret)
     }
 
+    def predicate (seg: ByteBuffer, pattern: Array[Byte]): Boolean =
+    {
+        var ret = false
+
+        seg.mark
+        val b0 = seg.get ()
+        val b1 = seg.get ()
+        val b2 = seg.get ()
+        seg.reset
+
+        if (b0 == pattern(0))
+            if (b1 == pattern(1))
+                if (b2 == pattern(2))
+                    ret = true
+
+        return (ret);
+    }
+
+    def isMessageStart (seg: ByteBuffer): Boolean = { predicate (seg, UNS) }
+    def isDateTimeOrPeriod (seg: ByteBuffer): Boolean = { predicate (seg, DTM) }
+    def isCCIItem (seg: ByteBuffer): Boolean = { predicate (seg, CCI) }
+    def isLineItem (seg: ByteBuffer): Boolean = { predicate (seg, LIN) }
+    def isProductId (seg: ByteBuffer): Boolean = { predicate (seg, PIA) }
+    def isQuantity (seg: ByteBuffer): Boolean = { predicate (seg, QTY) }
+
     def parseAll (seg: ByteBuffer, terminator: Int): List[ByteBuffer] =
     {
         var ret = List[ByteBuffer] ()
 
-        do
-        {
-            val part = parse (seg, terminator)
-            ret = ret :+ part
-        }
         while (0 < seg.remaining)
+            ret = ret :+ parse (seg, terminator)
 
         return (ret)
     }
 
-    def ParseData (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, data_element_separator)
+    def parseData (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, data_element_separator)
 
-    def ParseComponents (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, component_data_element_separator)
+    def parseComponents (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, component_data_element_separator)
+
+    def ParseNameAndAddress (seg: ByteBuffer): String =
+    {
+        // http://www.unece.org/trade/untdid/d99a/trsd/trsdnad.htm
+        // NAD+HN+12X-0000000858-F::293
+        // HN = Service performer (the party who is performing a service).
+        // 12X-0000000858-F = Code identifying a party involved in a transaction.
+        // 293 = Code identifying the agency responsible for a code list. ZZZ = Mutually defined
+        val elements = parseData (seg)
+        val parts = parseComponents (elements.tail.head)
+
+        return (segToString (parts.head))
+    }
+
+    def ParseLocation (seg: ByteBuffer): String =
+    {
+        // LOC+172+::87:CH1022201234500000000000000022079
+        val elements = parseData (seg)
+        val parts = parseComponents (elements.tail.tail.head)
+
+        return (segToString (parts.tail.tail.tail.head))
+    }
+
+    def ParseDateTimeOrPeriod (seg: ByteBuffer): String =
+    {
+        var ret = ""
+
+        // DTM+163:201303240000?+01:303
+        // DTM+672:15:806
+        val elements = parseData (seg)
+        val parts = parseComponents (elements.tail.head)
+
+        // TODO: handle more qualifiers? http://www.unece.org/trade/untdid/d99a/uncl/uncl2005.htm
+        val qualifier = segToNumber (parts.head)
+        val value = segToString (parts.tail.head)
+        val fmt = segToNumber (parts.tail.tail.head)
+        qualifier match
+        {
+            case 163 =>
+                if (303 != fmt)
+                    throw new Exception ("unrecognized date format")
+                val matcher = date303.matcher (value)
+                if (matcher.find)
+                {
+
+                    val s = MonthNames (matcher.group(2).toInt) + " " + matcher.group(3) + ", " + matcher.group(1) + " " + matcher.group(4) + ":" + matcher.group(5) + ":00 GMT" + matcher.group(6) + ":00"
+                    ret = s // new Date (s);
+                }
+
+            case 672 =>
+                if (806 != fmt)
+                    throw new Exception ("unrecognized interval format")
+                ret = value
+
+            case _ =>
+                ret = "0"
+        }
+
+        return (ret)
+    }
+
+    def ParseCharacteristic (seg: ByteBuffer): String =
+    {
+        // CCI+10++WS::293
+        val elements = parseData (seg)
+        val cls = segToNumber (elements.tail.head)
+        val details = segToString (elements.tail.tail.head)
+        val characteristic = if (0 == elements.tail.tail.tail.head.remaining)
+            ""
+        else
+        {
+            val parts = parseComponents (elements.tail.tail.tail.head);
+            val identification = segToString (parts.head)
+            val agency = segToString (parts.tail.tail.head)
+            "{identification: " + identification + ", agency: " + agency + "}"
+        }
+        val relevance = segToString (elements.tail.tail.tail.head)
+        val ret = "{property_class: " + cls + ", details: " + details + ", characteristic: " + characteristic + ", relevance: " + relevance + "}"
+
+        return (ret);
+    }
+
+    def ParseLineItem (seg: ByteBuffer): Int =
+    {
+        // LIN+1
+        val elements = parseData (seg);
+
+        return (segToNumber (elements.tail.head))
+    }
+
+    def ParseProduct (seg: ByteBuffer): String =
+    {
+        // PIA+5+1-1?:1.29.0*255:SWR
+        val elements = parseData (seg)
+        // TODO: handle more than a Product ID (5)? http://www.unece.org/trade/untdid/d99a/uncl/uncl4347.htm
+        val parts = parseComponents (elements.tail.tail.head)
+        // Medium - Kanal : Messgrösse . Messart . Tarif * Vorwert
+        val s = segToString (parts.head)
+        val pieces = s.split ("""[\-\:\.\*]""")
+        val ret =
+        "{" +
+            "medium: " + pieces(0).toInt + ", " +
+            "kanal: " + pieces(1).toInt + ", " +
+            "messgrösse: " + pieces(2).toInt + ", " +
+            "messart: " + pieces(3).toInt + ", " +
+            "tarif: " + pieces(4).toInt + ", " +
+            "vorwert: " + pieces(5).toInt +
+        "}"
+
+        return (ret);
+    }
+
+    def ParseQuantity (seg: ByteBuffer): Int =
+    {
+        // QTY+46:20.800:KWH
+        val elements = parseData (seg)
+        val parts = parseComponents (elements.tail.head)
+
+        return (segToNumber (parts.tail.head))
+    }
+
+    case class Record (
+        name: String,
+        location: String,
+        var quantities: List[Int],
+        var date: String = "",
+        var interval: String = "",
+        var characteristic: String = "",
+        var characteristic_date: Array[String] = null,
+        var item: Int = 0,
+        var product: String = ""
+        )
 
     def parseReadings ()
     {
@@ -204,7 +379,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var repeat = false // when true, repeat switch statement with same segment
         var name = ""
         var state = 0
-        var record = null
+        var record: Record = null
         var seg: ByteBuffer = null
         do
         {
@@ -260,127 +435,112 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             {
                 done = true
                 // process any partially complete record
-////                if ((null != record) && (typeof (callback) == "function"))
-////                    callback (record)
-//            }
-//            else
-//            {
-//                if (started)
-//                    switch (state)
-//                    {
-//                        case 0:
-//                            throw "illegal state exception"
-//                            break
-//
-//                        case 170: // NAD
-//                            name = ParseNameAndAddress (seg)
-//                            state = 190
-//                            break
-//
-//                        case 190: // mandatory LOC
-//                            record = {}
-//                            record["name"] = name
-//                            record["location"] = ParseLocation (seg)
-//                            record["quantities"] = []
-//                            state = 200
-//                            break
-//
-//                        case 200: // optional DTM (up to 9)
-//                            if (isDateTimeOrPeriod (seg))
-//                            {
-//                                var val = ParseDateTimeOrPeriod (seg)
-//                                if (typeof (val) == "object")
-//                                    record.date = val
+//                if ((null != record) && (typeof (callback) == "function"))
+//                    callback (record)
+            }
+            else
+            {
+                if (started)
+                    state match
+                    {
+                        case 0 =>
+                            throw new Exception ("illegal state exception")
+
+                        case 170 =>// NAD
+                            name = ParseNameAndAddress (seg)
+                            state = 190
+
+                        case 190 => // mandatory LOC
+                            record = Record (name, ParseLocation (seg), List[Int] ())
+                            state = 200
+
+                        case 200 => // optional DTM (up to 9)
+                            if (isDateTimeOrPeriod (seg))
+                            {
+                                var v = ParseDateTimeOrPeriod (seg)
+//                                if (typeof (v) == "object")
+                                    record.date = v
 //                                else
-//                                    record.interval = val
-//                                // state = 200 // again
-//                                break
-//                            }
-//                            else
-//                            {
-//                                // optional or no more DTM found
-//                                state = 250
-//                                repeat = true
-//                            }
-//                            break
-//
-//                            // TODO: should really handle optional group 7 (RFF)
-//
-//                        case 250: // optional group 8 with mandatory CCI
-//                            if (isCCIItem (seg))
-//                            {
-//                                record.characteristic = ParseCharacteristic (seg)
-//                                state = 260
-//                            }
-//                            else
-//                            {
-//                                state = 280
-//                                repeat = true
-//                            }
-//                            break
-//
-//                        case 260: // optional DTM (up to 99)
-//                            if (isDateTimeOrPeriod (seg))
-//                            {
-//                                record["characteristic_date"] = record["characteristic_date"] || []
-//                                record["characteristic_date"].push (ParseDateTimeOrPeriod (seg))
-//                                break
-//                            }
-//                            else
-//                            {
-//                                // optional or no more DTM found
-//                                state = 280
-//                                repeat = true
-//                            }
-//                            break
-//
-//                        case 280: // optional group 9 with mandatory LIN
-//                            if (isLineItem (seg))
-//                            {
-//                                record.item = ParseLineItem (seg)
-//                                state = 290
-//                            }
-//                            else
-//                            {
-//                                // optional group 9 (LIN) not found
-//                                state = 350
-//                                repeat = true
-//                            }
-//                            break
-//
-//                        case 290: // optional PIA
-//                            if (isProductId (seg))
-//                                record.product = ParseProduct (seg)
-//                            else
-//                                // optional PIA not found
-//                                repeat = true
-//                            state = 350
-//                            break
-//
-//                        case 350: // mandatory quantity
-//                            if (isQuantity (seg))
-//                                record.quantities.push (ParseQuantity (seg))
-//                            else
-//                            {
-//                                // TODO: handle DTM
-//
+//                                    record.interval = v
+                                // state = 200 // again
+                            }
+                            else
+                            {
+                                // optional or no more DTM found
+                                state = 250
+                                repeat = true
+                            }
+
+                            // TODO: should really handle optional group 7 (RFF)
+
+                        case 250 => // optional group 8 with mandatory CCI
+                            if (isCCIItem (seg))
+                            {
+                                record.characteristic = ParseCharacteristic (seg)
+                                state = 260
+                            }
+                            else
+                            {
+                                state = 280
+                                repeat = true
+                            }
+
+                        case 260 => // optional DTM (up to 99)
+                            if (isDateTimeOrPeriod (seg))
+                            {
+                                record.characteristic_date = record.characteristic_date :+ ParseDateTimeOrPeriod (seg)
+                            }
+                            else
+                            {
+                                // optional or no more DTM found
+                                state = 280
+                                repeat = true
+                            }
+
+                        case 280 => // optional group 9 with mandatory LIN
+                            if (isLineItem (seg))
+                            {
+                                record.item = ParseLineItem (seg)
+                                state = 290
+                            }
+                            else
+                            {
+                                // optional group 9 (LIN) not found
+                                state = 350
+                                repeat = true
+                            }
+
+                        case 290 => // optional PIA
+                            if (isProductId (seg))
+                                record.product = ParseProduct (seg)
+                            else
+                                // optional PIA not found
+                                repeat = true
+                            state = 350
+
+                        case 350 => // mandatory quantity
+                            if (isQuantity (seg))
+                                record.quantities = record.quantities :+ ParseQuantity (seg)
+                            else
+                            {
+                                // TODO: handle DTM
+
 //                                // process the complete record
 //                                if (typeof (callback) == "function")
 //                                    callback (record)
-//
-//                                record = null
-//
-//                                state = 190
-//                                repeat = true
-//                            }
-//                            break
-//                    }
-//                else
-//                    if (IsMessageStart (seg))
-//                    {
-//                        started = true
-//                        state = 170
-//                    }
+
+                                record = null
+
+                                state = 190
+                                repeat = true
+                            }
+                    }
+                else
+                    if (isMessageStart (seg))
+                    {
+                        started = true
+                        state = 170
+                    }
             }
         }
         while (!done)
@@ -392,6 +552,28 @@ object MSCONS
     final val UNT = "UNT".getBytes ("UTF-8")
     final val UNZ = "UNZ".getBytes ("UTF-8")
     final val CNT = "CNT".getBytes ("UTF-8")
+    final val UNS = "UNS".getBytes ("UTF-8")
+    final val DTM = "DTM".getBytes ("UTF-8")
+    final val CCI = "CCI".getBytes ("UTF-8")
+    final val LIN = "LIN".getBytes ("UTF-8")
+    final val PIA = "PIA".getBytes ("UTF-8")
+    final val QTY = "QTY".getBytes ("UTF-8")
+    final val date303 = Pattern.compile ("""([0-9]{1,4})([0-9]{1,2})([0-9]{1,2})([0-9]{1,2})([0-9]{1,2})([\?]*)""")
+    final val MonthNames = Array[String] (
+          "",
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December")
+
 
     /**
      * Main program for testing purposes.
