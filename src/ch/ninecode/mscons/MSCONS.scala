@@ -351,19 +351,20 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         return (ret);
     }
 
-    def ParseQuantity (seg: ByteBuffer): Int =
+    def ParseQuantity (seg: ByteBuffer): Double =
     {
         // QTY+46:20.800:KWH
         val elements = parseData (seg)
         val parts = parseComponents (elements.tail.head)
+        val q = segToString (parts.tail.head).replace (decimal_notification.toChar, '.')
 
-        return (segToNumber (parts.tail.head))
+        return (q.toDouble)
     }
 
     case class Record (
         name: String,
         location: String,
-        var quantities: List[Int],
+        var quantities: List[Double],
         var date: String = "",
         var interval: String = "",
         var characteristic: String = "",
@@ -451,7 +452,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                             state = 190
 
                         case 190 => // mandatory LOC
-                            record = Record (name, ParseLocation (seg), List[Int] ())
+                            record = Record (name, ParseLocation (seg), List[Double] ())
                             state = 200
 
                         case 200 => // optional DTM (up to 9)
