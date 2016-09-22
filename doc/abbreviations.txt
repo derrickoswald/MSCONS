@@ -1,0 +1,16 @@
+AMI Advanced Metering Infrastructure
+CIM Common Information Model
+CIS Customer Information System
+COSEM Companion Specification for Energy Metering
+DLMS Device Language Message Specification
+ERP Enterprise Resource Planning
+HES Head End System
+IC Interface Class
+LNAP Local Network Access Point
+NNAP Neighborhood Network Access Point
+OBIS OBject Identification System
+QOS Quality Of Supply
+RCD Remote Connect/Disconnect Switch
+TOU Time Of Use
+UC Use Case
+

@@ -9,7 +9,6 @@ import java.nio.file.FileSystems
 import java.nio.ByteBuffer
 import java.util.regex.Pattern
 
-// was: BufferedInputStream
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
     // stupid funky scala syntax to "import" the companion object constant declarations
@@ -329,11 +328,61 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         return (segToNumber (elements.tail.head))
     }
 
+    /**
+     * Parse an OBIS code in the additional product id (PIA) segment.
+     *
+     * For PIA product code:
+     * @see http://www.unece.org/trade/untdid/d99a/uncl/uncl4347.htm
+     *
+     * The OBIS code consists of (up to) 6 group sub-identifiers marked
+     * by letters A to F. All these may or may not be present in the
+     * identifier (e.g. groups A and B are often omitted).
+     * In order to decide to which group the sub-identifier belongs,
+     * the groups are separated by unique separators:
+     *
+     *   A-B:C.D.E*F
+     *
+     *   - The A group defines the medium
+     *     (0=abstract objects, 1=electricity, 6=heat, 7=gas, 8=water, ...)
+     *   - The B group defines the channel.
+     *     Each device with multiple channels generating measurement results,
+     *     can separate the results into the channels.
+     *   - The C group defines the physical value
+     *     (current, voltage, energy, level, temperature, ...)
+     *   - The D group defines the quantity computation output of specific algorithm
+     *   - The E group specifies the measurement type defined by
+     *     groups A to D into individual measurements (e.g. switching ranges)
+     *   - The F group separates the results partly defined by groups A to E.
+     *     The typical usage is the specification of individual time ranges.
+     *
+     * Reduced ID codes (e.g. for IEC 62056-21 )
+     * To comply with the syntax defined for protocol modes A to D of IEC 62056-21, the range of ID
+     * codes is reduced to fulfil the limitations which are usually applied to the number of digits and
+     * the ASCII representation of them. All value groups are limited to a range of 0 .. 99 and within
+     * that range, to the limits given in the relevant chapters.
+     * Some value groups may be suppressed, if they are not relevant to an application:
+     *     Optional value groups: A, B, E, F
+     *     Mandatory value groups: C, D
+     * To allow the interpretation of shortened codes delimiters are
+     * inserted between all value groups:
+     *
+     *   A-B:C.D.E*F
+     *
+     * The delimiter between value groups E and F can be modified to carry some information about
+     * the source of a reset (& instead of * if the reset was performed manually).
+     * For compatibility with existing implementations, in value group A an identifier for an energy
+     * type may be used even for abstract objects.
+     *
+     * For CIM mapping could use:
+     *   Electricity metering data exchange – The DLMS/COSEM suite –
+     *   Part 6-9: Mapping between the Common Information Model message profiles
+     *   (IEC 61968-9) and DLMS/COSEM (IEC 62056) data models and protocols
+     */
     def ParseProduct (seg: ByteBuffer): String =
     {
         // PIA+5+1-1?:1.29.0*255:SWR
         val elements = parseData (seg)
-        // TODO: handle more than a Product ID (5)? http://www.unece.org/trade/untdid/d99a/uncl/uncl4347.htm
+        val product = segToNumber (elements.tail.head) // 5 = Product identification
         val parts = parseComponents (elements.tail.tail.head)
         // Medium - Kanal : Messgrösse . Messart . Tarif * Vorwert
         val s = segToString (parts.head)
