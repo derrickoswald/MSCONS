@@ -14,14 +14,16 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     // stupid funky scala syntax to "import" the companion object constant declarations
     import MSCONS._
 
-    // See http://www.unece.org/trade/untdid/d99a/trmd/mscons_c.htm
-    // and also see http://www.unece.org/cefact/edifact/welcome.html
-    // and http://www.edi-energy.de/files2/MSCONS_MIG_2_2e_Lesefassung_2015_09_15_2015_09_11.pdf from Bundesverbandes der Energie- und Wasserwirtschaft e.V. ("BDEW" https://bdew.de)
+    // For a description of EDIFACT message application level syntax rules, see http://www.unece.org/trade/untdid/texts/d422_d.htm
+    // For a descripion of MSCONS messages, see http://www.unece.org/trade/untdid/d09b/trmd/mscons_c.htm
+    //   ... or a older one used to write the original Javascript code http://www.unece.org/trade/untdid/d99a/trmd/mscons_c.htm
+    // The United Nations group responsible for EDIFACT see http://www.unece.org/cefact/edifact/welcome.html
+    // For a description (auf Deutsch) of MSCONS messages used/implemented by Bundesverbandes der Energie- und Wasserwirtschaft e.V. ("BDEW" https://bdew.de) see http://www.edi-energy.de/files2/MSCONS_MIG_2_2e_Lesefassung_2015_09_15_2015_09_11.pdf
 
     var component_data_element_separator = ":".codePointAt (0)
     var data_element_separator = "+".codePointAt (0)
     var decimal_notification = ".".codePointAt (0)
-    var release_character = "?".codePointAt (0)
+    var release_character = "?".codePointAt (0) // ToDo: a space character means the release character is not used
     var segment_terminator = "'".codePointAt (0)
 
     /**
@@ -45,17 +47,31 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     }
 
     /**
-     * Convert a ByteBuffer into a number.
+     * Convert a ByteBuffer into an integer.
      * A convenience function to drain the buffer as if it was a
-     * UTF-8 encoded string representation of a decimal number.
+     * UTF-8 encoded string representation of a decimal integer.
      * @param buffer - the buffer to convert, which will be exhausted
      * @return the integer value of the buffer
      */
-    def segToNumber (buffer: ByteBuffer): Int =
+    def segToInteger (buffer: ByteBuffer): Int =
     {
         var ret = 0
         while (0 < buffer.remaining)
             ret = ret * 10 + (buffer.get () - '0')
+        return (ret)
+    }
+
+    /**
+     * Convert a ByteBuffer into a double.
+     * A convenience function to drain the buffer as if it was a
+     * UTF-8 encoded string representation of a floating point decimal number.
+     * @param buffer - the buffer to convert, which will be exhausted
+     * @return the floating point value of the buffer
+     */
+    def segToDouble (buffer: ByteBuffer): Double =
+    {
+        var ret = segToString (buffer).replace (decimal_notification.toChar, '.').toDouble
+
         return (ret)
     }
 
@@ -95,6 +111,42 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             else
                 buffer.reset ()
         }
+    }
+
+    def parseUNB (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // UNB+UNOC:3+12X-0000000858-F:500+12XBKW-HANDEL--X:500+140304:1854+1406300423489++LG
+        val elements = parseData (seg)
+        if (predicate (elements.head, UNB))
+        {
+            val syntax = parseComponents (elements.tail.head)
+            if (("UNOC".equals (segToString (syntax.head))) && (3 == segToInteger (syntax.tail.head)))
+            {
+                // 12X-0000000858-F:500
+                val sender = parseComponents (elements.tail.tail.head)
+                // 12XBKW-HANDEL--X:500
+                val recipient = parseComponents (elements.tail.tail.tail.head)
+                // 140304:1854
+                val datetime = parseComponents (elements.tail.tail.tail.tail.head)
+                // 1406300423489
+                val reference = elements.tail.tail.tail.tail.tail.head
+                println ("from: " + segToString (sender.head))
+                println ("to: " + segToString (recipient.head))
+                println ("date: " + segToString (datetime.head))
+                println ("time: " + segToString (datetime.tail.head))
+                println ("reference: " + segToString (reference))
+                // 14  EAN International
+                // 500 DE, BDEW (Bundesverband der Energie- und Wasserwirtschaft e.V.)
+                // 501 EASEE gas (European Association for the Streamlining of Energy Exchange)
+                // 502 DE, DVGW (Deutsche Vereinigung des Gas-und Wasserfaches e.V.)
+                // ZZZ ETSO
+            }
+            else
+                throw new Exception ("message does not conform to UN/ECE level C version 3")
+        }
+        else
+            throw new Exception ("expected UNB segment not found")
     }
 
     /**
@@ -271,9 +323,9 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val parts = parseComponents (elements.tail.head)
 
         // TODO: handle more qualifiers? http://www.unece.org/trade/untdid/d99a/uncl/uncl2005.htm
-        val qualifier = segToNumber (parts.head)
+        val qualifier = segToInteger (parts.head)
         val value = segToString (parts.tail.head)
-        val fmt = segToNumber (parts.tail.tail.head)
+        val fmt = segToInteger (parts.tail.tail.head)
         qualifier match
         {
             case 163 =>
@@ -303,7 +355,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     {
         // CCI+10++WS::293
         val elements = parseData (seg)
-        val cls = segToNumber (elements.tail.head)
+        val cls = segToInteger (elements.tail.head)
         val details = segToString (elements.tail.tail.head)
         val characteristic = if (0 == elements.tail.tail.tail.head.remaining)
             ""
@@ -325,7 +377,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         // LIN+1
         val elements = parseData (seg);
 
-        return (segToNumber (elements.tail.head))
+        return (segToInteger (elements.tail.head))
     }
 
     /**
@@ -382,7 +434,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     {
         // PIA+5+1-1?:1.29.0*255:SWR
         val elements = parseData (seg)
-        val product = segToNumber (elements.tail.head) // 5 = Product identification
+        val product = segToInteger (elements.tail.head) // 5 = Product identification
         val parts = parseComponents (elements.tail.tail.head)
         // Medium - Kanal : Messgrösse . Messart . Tarif * Vorwert
         val s = segToString (parts.head)
@@ -405,9 +457,8 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         // QTY+46:20.800:KWH
         val elements = parseData (seg)
         val parts = parseComponents (elements.tail.head)
-        val q = segToString (parts.tail.head).replace (decimal_notification.toChar, '.')
 
-        return (q.toDouble)
+        return (segToDouble (parts.tail.head))
     }
 
     case class Record (
@@ -599,6 +650,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
 
 object MSCONS
 {
+    final val UNB = "UNB".getBytes ("UTF-8")
     final val UNT = "UNT".getBytes ("UTF-8")
     final val UNZ = "UNZ".getBytes ("UTF-8")
     final val CNT = "CNT".getBytes ("UTF-8")
@@ -641,6 +693,7 @@ object MSCONS
 
             val mscons = new MSCONS (buffer)
             mscons.parseUNA ()
+            mscons.parseUNB ()
             mscons.parseReadings ()
 
             val after = System.nanoTime

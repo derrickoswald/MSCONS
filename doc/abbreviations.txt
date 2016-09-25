@@ -4,13 +4,17 @@ CIS Customer Information System
 COSEM Companion Specification for Energy Metering
 DLMS Device Language Message Specification
 ERP Enterprise Resource Planning
+EMS Energy Management System, a  system of computer-aided tools used by operators of electric utility grids to monitor, control, and optimize the performance of the generation and/or transmission system
 HES Head End System
+IA Interchange Agreement
 IC Interface Class
+ICCP Inter-Control Center Communications Protocol, an operational protocol used by electrical utilities as part of IEC 60870-6
 LNAP Local Network Access Point
 NNAP Neighborhood Network Access Point
 OBIS OBject Identification System
 QOS Quality Of Supply
 RCD Remote Connect/Disconnect Switch
+SIPS System Integrity Protection Schemes
 TOU Time Of Use
 UC Use Case
 
