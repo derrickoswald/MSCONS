@@ -9,6 +9,51 @@ import java.nio.file.FileSystems
 import java.nio.ByteBuffer
 import java.util.regex.Pattern
 
+import akka.actor.{ ActorRef, FSM }
+import scala.concurrent.duration._
+
+// state
+sealed trait State
+case object Idle extends State
+case class Prefix (name: String) extends State
+
+// data
+sealed trait Data
+case object Uninitialized extends Data
+final case class Todo (something: String) extends Data
+
+// received events
+final case class SetTarget (ref: Integer)
+final case class Queue(obj: Any)
+case object Flush
+
+// state machine
+// State(S) x Event(E) -> Actions (A), State(S')
+
+class Parser extends FSM[State, Data]
+{
+    startWith (Idle, Uninitialized)
+
+    when (Idle)
+    {
+        case Event (SetTarget (ref), Uninitialized) =>
+            stay using Todo ("hello")
+    }
+
+    // transition elided ...
+
+    when (Prefix ("BGN"))
+    {
+        case Event (Flush | StateTimeout, t: Todo) =>
+          goto (Idle) using t.copy(something = null)
+    }
+
+    // unhandled elided ...
+
+    initialize ()
+}
+
+
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
     // stupid funky scala syntax to "import" the companion object constant declarations
