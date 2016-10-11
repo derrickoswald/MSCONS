@@ -9,51 +9,6 @@ import java.nio.file.FileSystems
 import java.nio.ByteBuffer
 import java.util.regex.Pattern
 
-import akka.actor.{ ActorRef, FSM }
-import scala.concurrent.duration._
-
-// state
-sealed trait State
-case object Idle extends State
-case class Prefix (name: String) extends State
-
-// data
-sealed trait Data
-case object Uninitialized extends Data
-final case class Todo (something: String) extends Data
-
-// received events
-final case class SetTarget (ref: Integer)
-final case class Queue(obj: Any)
-case object Flush
-
-// state machine
-// State(S) x Event(E) -> Actions (A), State(S')
-
-class Parser extends FSM[State, Data]
-{
-    startWith (Idle, Uninitialized)
-
-    when (Idle)
-    {
-        case Event (SetTarget (ref), Uninitialized) =>
-            stay using Todo ("hello")
-    }
-
-    // transition elided ...
-
-    when (Prefix ("BGN"))
-    {
-        case Event (Flush | StateTimeout, t: Todo) =>
-          goto (Idle) using t.copy(something = null)
-    }
-
-    // unhandled elided ...
-
-    initialize ()
-}
-
-
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
     // stupid funky scala syntax to "import" the companion object constant declarations
@@ -176,11 +131,18 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                 val datetime = parseComponents (elements.tail.tail.tail.tail.head)
                 // 1406300423489
                 val reference = elements.tail.tail.tail.tail.tail.head
+                // LG - message type, if the transfer file contains only one message type.
+                val typ = elements.tail.tail.tail.tail.tail.tail.tail.head
+                // LG – Lastgang, täglich
+                // EM – Energiemenge
+                // VL – Verrechnungsliste, Zählerstand
+                // TL – Lastgang, beliebiger Zeitraum
                 println ("from: " + segToString (sender.head))
                 println ("to: " + segToString (recipient.head))
                 println ("date: " + segToString (datetime.head))
                 println ("time: " + segToString (datetime.tail.head))
                 println ("reference: " + segToString (reference))
+                println ("type: " + segToString (typ))
                 // 14  EAN International
                 // 500 DE, BDEW (Bundesverband der Energie- und Wasserwirtschaft e.V.)
                 // 501 EASEE gas (European Association for the Streamlining of Energy Exchange)

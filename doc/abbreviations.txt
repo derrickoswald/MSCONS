@@ -1,15 +1,19 @@
 AMI Advanced Metering Infrastructure
+AMM Advanced Metering Management. AMM systems provide automated bi-directional communication between the energy meter and the utility. The communication is not limited to meter data but can include information about consumption, tariffs, alerts and complementary services.
+AMR Automated Meter Reading. Refers to systems responsible for handling tasks that require communication with metering devices, for example reading of metering values. See HES.
 CIM Common Information Model
 CIS Customer Information System
 COSEM Companion Specification for Energy Metering
+DER distributed energy resources
 DLMS Device Language Message Specification
 ERP Enterprise Resource Planning
 EMS Energy Management System, a  system of computer-aided tools used by operators of electric utility grids to monitor, control, and optimize the performance of the generation and/or transmission system
-HES Head End System
+HES Head-End System for Automated Meter Reading. See AMR.
 IA Interchange Agreement
 IC Interface Class
 ICCP Inter-Control Center Communications Protocol, an operational protocol used by electrical utilities as part of IEC 60870-6
 LNAP Local Network Access Point
+MDM Metering Data Management. The metering database and metering data processing system of Gridstream AIM is also known as Ware.
 NNAP Neighborhood Network Access Point
 OBIS OBject Identification System
 QOS Quality Of Supply
