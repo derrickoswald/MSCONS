@@ -1,9 +1,7 @@
-name := "MSCONSScala"
- 
-version := "1.0"
- 
-scalaVersion := "2.11.8"
- 
-libraryDependencies +=
-  "com.typesafe.akka" %% "akka-actor" % "2.4.10"
+name := "MSCONSReader"
 
+version := "1.0"
+
+scalaVersion := "2.11.8"
+
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
