@@ -15,7 +15,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     import MSCONS._
 
     // For a description of EDIFACT message application level syntax rules, see http://www.unece.org/trade/untdid/texts/d422_d.htm
-    // For a descripion of MSCONS messages, see http://www.unece.org/trade/untdid/d09b/trmd/mscons_c.htm
+    // For a description of MSCONS messages, see http://www.unece.org/trade/untdid/d09b/trmd/mscons_c.htm
     //   ... or a older one used to write the original Javascript code http://www.unece.org/trade/untdid/d99a/trmd/mscons_c.htm
     // The United Nations group responsible for EDIFACT see http://www.unece.org/cefact/edifact/welcome.html
     // For a description (auf Deutsch) of MSCONS messages used/implemented by Bundesverbandes der Energie- und Wasserwirtschaft e.V. ("BDEW" https://bdew.de) see http://www.edi-energy.de/files2/MSCONS_MIG_2_2e_Lesefassung_2015_09_15_2015_09_11.pdf
