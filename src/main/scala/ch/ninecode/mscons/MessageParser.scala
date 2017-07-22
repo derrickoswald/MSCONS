@@ -16,8 +16,8 @@ class MessageParser (una: UNA) extends RegexParsers
 
 object MessageParser
 {
-        def main (args: Array[String]) =
-        {
+    def main (args: Array[String]) =
+    {
         val properties =
         {
             val in = this.getClass.getResourceAsStream ("/app.properties")
