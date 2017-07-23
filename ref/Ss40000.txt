@@ -1,0 +1,1276 @@
+1.   Service segment specifications
+
+     Change indicators
+
+     a plus sign (+)    for an addition
+     an asterisk (*)    for an amendment to structure
+     a hash sign (#)    for changes to names
+     a vertical bar (|) for changes to text for descriptions,
+                        notes and functions
+     a minus sign (-)   for a deletion
+     an X sign (X)      for marked for deletion
+
+------------------------------------------------------------------------------
+
+      UCD    DATA ELEMENT ERROR INDICATION
+
+      Function: To identify an erroneous stand-alone, composite or component
+                data element, and to identify the nature of the error.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0085  SYNTAX ERROR, CODED                         M 1   an..3    
+
+020   S011  DATA ELEMENT IDENTIFICATION                 M 1            
+      0098   Erroneous data element position in
+             segment                                    M     n..3
+      0104   Erroneous component data element
+             position                                   C     n..3
+      0136   Erroneous data element occurrence          C     n..6
+
+------------------------------------------------------------------------------
+
+      UCF    GROUP RESPONSE
+
+      Function: To identify a group in the subject interchange and to indicate
+                acknowledgement or rejection (action taken) of the UNG and UNE
+                segments, and to identify any error related to these segments.
+                It can also identify errors related to the USA, USC, USD, USH,
+                USR, UST, or USU security segments when they appear at the
+                group level. Depending on the action code, it may also
+                indicate the action taken on the messages and packages within
+                that group.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0048  GROUP REFERENCE NUMBER                      M 1   an..14   
+
+020   S006  APPLICATION SENDER IDENTIFICATION           C 1            7
+      0040   Application sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+
+030   S007  APPLICATION RECIPIENT IDENTIFICATION        C 1            7
+      0044   Application recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+
+040   0083  ACTION, CODED                               M 1   an..3    
+
+050   0085  SYNTAX ERROR, CODED                         C 1   an..3    1,2,3,
+                                                                       4
+
+060   0135  SERVICE SEGMENT TAG, CODED                  C 1   an..3    1,2,3,
+                                                                       4,5
+
+070   S011  DATA ELEMENT IDENTIFICATION                 C 1            2
+      0098   Erroneous data element position in
+             segment                                    M     n..3
+      0104   Erroneous component data element
+             position                                   C     n..3
+      0136   Erroneous data element occurrence          C     n..6
+
+080   0534  SECURITY REFERENCE NUMBER                   C 1   an..14   3,4,6
+
+090   0138  SECURITY SEGMENT POSITION                   C 1   n..6     3,4,6
+
+
+DEPENDENCY NOTES:
+
+1.  D5(060, 050) If first, then all
+
+2.  D5(070, 060, 050) If first, then all
+
+3.  D5(080, 060, 050, 090) If first, then all
+
+4.  D5(090, 080, 060, 050) If first, then all
+
+OTHER NOTES:
+
+5.  0135, may only contain the values UNG, UNE, USA, USC, USD, USH, USR, UST,
+    or USU.
+
+6.  This data element shall be present when reporting an error in a security
+    segment.
+
+7.  This data element shall be present if it was present in the subject
+    interchange.
+
+------------------------------------------------------------------------------
+
+      UCI    INTERCHANGE RESPONSE
+
+      Function: To identify the subject interchange, to indicate interchange
+                receipt, to indicate acknowledgement or rejection (action
+                taken) of the UNA, UNB and UNZ segments, and to identify any
+                error related to these segments. It can also identify errors
+                related to the USA, USC, USD, USH, USR, UST, or USU security
+                segments when they appear at the interchange level. Depending
+                on the action code, it may also indicate the action taken on
+                the groups, messages, and packages within that interchange.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0020  INTERCHANGE CONTROL REFERENCE               M 1   an..14   
+
+020   S002  INTERCHANGE SENDER                          M 1            
+      0004   Interchange sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+      0008   Interchange sender internal
+             identification                             C     an..35
+      0042   Interchange sender internal
+             sub-identification                         C     an..35
+
+030   S003  INTERCHANGE RECIPIENT                       M 1            
+      0010   Interchange recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+      0014   Interchange recipient internal
+             identification                             C     an..35
+      0046   Interchange recipient internal
+             sub-identification                         C     an..35
+
+040   0083  ACTION, CODED                               M 1   an..3    
+
+050   0085  SYNTAX ERROR, CODED                         C 1   an..3    1,2,3,
+                                                                       4
+
+060   0135  SERVICE SEGMENT TAG, CODED                  C 1   an..3    1,2,3,
+                                                                       4,5
+
+070   S011  DATA ELEMENT IDENTIFICATION                 C 1            2
+      0098   Erroneous data element position in
+             segment                                    M     n..3
+      0104   Erroneous component data element
+             position                                   C     n..3
+      0136   Erroneous data element occurrence          C     n..6
+
+080   0534  SECURITY REFERENCE NUMBER                   C 1   an..14   3,4,6
+
+090   0138  SECURITY SEGMENT POSITION                   C 1   n..6     3,4,6
+
+
+DEPENDENCY NOTES:
+
+1.  D5(060, 050) If first, then all
+
+2.  D5(070, 060, 050) If first, then all
+
+3.  D5(080, 060, 050, 090) If first, then all
+
+4.  D5(090, 080, 060, 050) If first, then all
+
+OTHER NOTES:
+
+5.  0135, may only contain the values UNA, UNB, UNZ, USA, USC, USD, USH, USR,
+    UST, or USU.
+
+6.  This data element shall be present when reporting an error in a security
+    segment.
+
+------------------------------------------------------------------------------
+
+      UCM    MESSAGE/PACKAGE RESPONSE
+
+      Function: To identify a message or package in the subject interchange,
+                and to indicate that message's or package's acknowledgement or
+                rejection (action taken), and to identify any error related to
+                the UNH, UNT, UNO, and UNP segments. It can also identify
+                errors related to the USA, USC, USD, USH, USR, UST, or USU
+                security segments when they appear at the message or package
+                level.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0062  MESSAGE REFERENCE NUMBER                    C 1   an..14   1,2
+
+020   S009  MESSAGE IDENTIFIER                          C 1            2
+      0065   Message type                               M     an..6
+      0052   Message version number                     M     an..3
+      0054   Message release number                     M     an..3
+      0051   Controlling agency, coded                  M     an..3
+      0057   Association assigned code                  C     an..6
+      0110   Code list directory version number         C     an..6
+      0113   Message type sub-function identification   C     an..6
+
+030   0083  ACTION, CODED                               M 1   an..3    
+
+040   0085  SYNTAX ERROR, CODED                         C 1   an..3    4,5,6,
+                                                                       7
+
+050   0135  SERVICE SEGMENT TAG, CODED                  C 1   an..3    4,5,6,
+                                                                       7,8
+
+060   S011  DATA ELEMENT IDENTIFICATION                 C 1            5
+      0098   Erroneous data element position in
+             segment                                    M     n..3
+      0104   Erroneous component data element
+             position                                   C     n..3
+      0136   Erroneous data element occurrence          C     n..6
+
+070   0800  PACKAGE REFERENCE NUMBER                    C 1   an..35   1,3
+
+080   S020  REFERENCE IDENTIFICATION                    C 99           3
+      0813   Reference qualifier                        M     an..3
+      0802   Reference identification number            M     an..35
+
+090   0534  SECURITY REFERENCE NUMBER                   C 1   an..14   6,7,9
+
+100   0138  SECURITY SEGMENT POSITION                   C 1   n..6     6,7,9
+
+
+DEPENDENCY NOTES:
+
+1.  D1(010, 070) One and only one
+
+2.  D2(010, 020) All or none
+
+3.  D2(070, 080) All or none
+
+4.  D5(050, 040) If first, then all
+
+5.  D5(060, 050, 040) If first, then all
+
+6.  D5(090, 050, 040, 100) If first, then all
+
+7.  D5(100, 090, 050, 040) If first, then all
+
+OTHER NOTES:
+
+8.  0135, may only contain the values UNH, UNT, UNO, UNP, USA, USC, USD, USH,
+    USR, UST, or USU.
+
+9.  This data element shall be present when reporting an error in a security
+    segment.
+
+------------------------------------------------------------------------------
+
+      UCS    SEGMENT ERROR INDICATION
+
+      Function: To identify either a segment containing an error or a missing
+                segment, and to identify any error related to the complete
+                segment.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0096  SEGMENT POSITION IN MESSAGE BODY            M 1   n..6     
+
+020   0085  SYNTAX ERROR, CODED                         C 1   an..3    1
+
+
+NOTES:
+
+1.  0085, shall contain a value only if the error pertains to the segment
+    identified by data element 0096.
+
+------------------------------------------------------------------------------
+
+      UGH    ANTI-COLLISION SEGMENT GROUP HEADER
+
+      Function: To head, identify and specify an anti-collision segment group.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0087  ANTI-COLLISION SEGMENT GROUP IDENTIFICATION M 1   an..4    1
+
+
+NOTES:
+
+1.  0087, the value shall be the segment group number of the UGH/UGT segment
+    group as stated in the message specification. It shall be identical to the
+    value in 0087 in the corresponding UGT segment.
+
+------------------------------------------------------------------------------
+
+      UGT    ANTI-COLLISION SEGMENT GROUP TRAILER
+
+      Function: To end and check the completeness of an anti-collision segment
+                group.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0087  ANTI-COLLISION SEGMENT GROUP IDENTIFICATION M 1   an..4    1
+
+
+NOTES:
+
+1.  0087, the value shall be the segment group number of the UGH/UGT segment
+    group as stated in the message specification. It shall be identical to the
+    value in 0087 in the corresponding UGH segment.
+
+------------------------------------------------------------------------------
+
+      UIB    INTERACTIVE INTERCHANGE HEADER
+
+      Function: To head and identify an interchange.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S001  SYNTAX IDENTIFIER                           M 1            3
+      0001   Syntax identifier                          M     a4
+      0002   Syntax version number                      M     an1
+      0080   Service code list directory version
+             number                                     C     an..6
+      0133   Character encoding, coded                  C     an..3
+
+020   S302  DIALOGUE REFERENCE                          C 1            1,2,4,
+                                                                       5,8
+      0300   Initiator control reference                M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+      0304   Responder control reference                C     an..35
+
+030   S303  TRANSACTION REFERENCE                       C 1            1,8
+      0306   Transaction control reference              M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+
+040   S018  SCENARIO IDENTIFICATION                     C 1            
+      0127   Scenario identification                    M     an..14
+      0128   Scenario version number                    C     an..3
+      0130   Scenario release number                    C     an..3
+      0051   Controlling agency, coded                  C     an..3
+
+050   S305  DIALOGUE IDENTIFICATION                     C 1            2
+      0311   Dialogue identification                    M     an..14
+      0342   Dialogue version number                    C     an..3
+      0344   Dialogue release number                    C     an..3
+      0051   Controlling agency, coded                  C     an..3
+
+060   S002  INTERCHANGE SENDER                          C 1            5
+      0004   Interchange sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+      0008   Interchange sender internal
+             identification                             C     an..35
+      0042   Interchange sender internal
+             sub-identification                         C     an..35
+
+070   S003  INTERCHANGE RECIPIENT                       C 1            
+      0010   Interchange recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+      0014   Interchange recipient internal
+             identification                             C     an..35
+      0046   Interchange recipient internal
+             sub-identification                         C     an..35
+
+080   S300  DATE AND/OR TIME OF INITIATION              C 1            
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+090   0325  DUPLICATE INDICATOR                         C 1   a1       6
+
+100   0035  TEST INDICATOR                              C 1   n1       7
+
+
+DEPENDENCY NOTES:
+
+1.  D5(030, 020) If first, then all
+
+2.  D5(050, 020) If first, then all
+
+OTHER NOTES:
+
+3.  S001/0002, shall be '4' to indicate this version of the syntax.
+
+4.  S302/0304, when provided by the responder, shall be returned by the
+    initiator throughout the dialogue.
+
+5.  S002/0004, may be same as S302/0303 for initiator of transaction.
+
+6.  0325, only used if the interchange is a duplicate transfer.
+
+7.  0035, set by the initiator if the dialogue is a test. Applies to every
+    subsequent message and service segment in the dialogue. Otherwise not
+    used.
+
+8.  Dialogue and transaction control can be accomplished through the dialogue
+    (S302) and transaction (S303) references. Optionally, if another means of
+    control is chosen, these two composite data elements need not be
+    utilised.	
+
+------------------------------------------------------------------------------
+
+      UIH    INTERACTIVE MESSAGE HEADER
+
+      Function: To head, identify and specify a message.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S306  INTERACTIVE MESSAGE IDENTIFIER              M 1            
+      0065   Message type                               M     an..6
+      0052   Message version number                     M     an..3
+      0054   Message release number                     M     an..3
+      0113   Message type sub-function identification   C     an..6
+      0051   Controlling agency, coded                  C     an..3
+      0057   Association assigned code                  C     an..6
+
+020   0340  INTERACTIVE MESSAGE REFERENCE NUMBER        C 1   an..35   1,5
+
+030   S302  DIALOGUE REFERENCE                          C 1            2,4,5
+      0300   Initiator control reference                M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+      0304   Responder control reference                C     an..35
+
+040   S301  STATUS OF TRANSFER - INTERACTIVE            C 1            
+      0320   Sender sequence number                     C     n..6
+      0323   Transfer position, coded                   C     a1
+      0325   Duplicate Indicator                        C     a1
+
+050   S300  DATE AND/OR TIME OF INITIATION              C 1            
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+060   0035  TEST INDICATOR                              C 1   n1       3
+
+
+NOTES:
+
+1.  The value in 0340 shall be unique within the interchange (except for a
+    duplicate transfer).
+
+2.  The value(s) in S302 shall be identical to the value(s) in S302 in the
+    preceding UIB.
+
+3.  0035, when used, test applies to the message only.
+
+4.  Dialogue control can be accomplished through the dialogue reference
+    (S302). Optionally, if another means of control is chosen, this composite
+    data element need not be utilised.
+
+5.  A combination of 0340 and S302 may be used to identify uniquely a message.
+
+------------------------------------------------------------------------------
+
+      UIR    INTERACTIVE STATUS
+
+      Function: To report the status of the dialogue.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0331  REPORT FUNCTION, CODED                      M 1   an..3    
+
+020   S307  REPORT REASON                               C 9            
+      0333   Report reason, coded                       C     an..3
+      0332   Report reason text                         C     an..70
+      0335   Report language, coded                     C     an..3
+
+030   S302  DIALOGUE REFERENCE                          C 1            
+      0300   Initiator control reference                M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+      0304   Responder control reference                C     an..35
+
+040   S300  DATE AND/OR TIME OF INITIATION              C 1            
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+050   0340  INTERACTIVE MESSAGE REFERENCE NUMBER        C 1   an..35   1,2
+
+060   0800  PACKAGE REFERENCE NUMBER                    C 1   an..35   1,3
+
+
+DEPENDENCY NOTES:
+
+1.  D1(050, 060) One and only one
+
+OTHER NOTES:
+
+2.  0340, the value shall be identical to the value in 0340 in the UIH of a
+    message received by the sender of the UIR within the same dialogue.
+
+3.  0800, the value shall be identical to the value in 0800 in the UNO
+    received by the sender of the UIR within the same dialogue.
+
+------------------------------------------------------------------------------
+
+      UIT    INTERACTIVE MESSAGE TRAILER
+
+      Function: To end and check the completeness of a message.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0340  INTERACTIVE MESSAGE REFERENCE NUMBER        C 1   an..35   1
+
+020   0074  NUMBER OF SEGMENTS IN A MESSAGE             C 1   n..10    
+
+
+NOTES:
+
+1.  0340, the value shall be identical to the value in 0340 in the
+    corresponding UIH segment.
+
+------------------------------------------------------------------------------
+
+      UIZ    INTERACTIVE INTERCHANGE TRAILER
+
+      Function: To end and check the completeness of an interchange.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S302  DIALOGUE REFERENCE                          C 1            1
+      0300   Initiator control reference                M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+      0304   Responder control reference                C     an..35
+
+020   0036  INTERCHANGE CONTROL COUNT                   C 1   n..6     
+
+030   0325  DUPLICATE INDICATOR                         C 1   a1       2
+
+
+NOTES:
+
+1.  S302, the value shall be identical to the value in the responder's
+    dialogue reference in S302 in the UIB segment.
+
+2.  0325, only used if the interchange is a duplicate transfer.
+
+------------------------------------------------------------------------------
+
+      UNB    INTERCHANGE HEADER
+
+      Function: To identify an interchange.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S001  SYNTAX IDENTIFIER                           M 1            1
+      0001   Syntax identifier                          M     a4
+      0002   Syntax version number                      M     an1
+      0080   Service code list directory version
+             number                                     C     an..6
+      0133   Character encoding, coded                  C     an..3
+
+020   S002  INTERCHANGE SENDER                          M 1            2
+      0004   Interchange sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+      0008   Interchange sender internal
+             identification                             C     an..35
+      0042   Interchange sender internal
+             sub-identification                         C     an..35
+
+030   S003  INTERCHANGE RECIPIENT                       M 1            2
+      0010   Interchange recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+      0014   Interchange recipient internal
+             identification                             C     an..35
+      0046   Interchange recipient internal
+             sub-identification                         C     an..35
+
+040   S004  DATE AND TIME OF PREPARATION                M 1            
+      0017   Date                                       M     n8
+      0019   Time                                       M     n4
+
+050   0020  INTERCHANGE CONTROL REFERENCE               M 1   an..14   2
+
+060   S005  RECIPIENT REFERENCE/PASSWORD DETAILS        C 1            
+      0022   Recipient reference/password               M     an..14
+      0025   Recipient reference/password qualifier     C     an2
+
+070   0026  APPLICATION REFERENCE                       C 1   an..14   
+
+080   0029  PROCESSING PRIORITY CODE                    C 1   a1       
+
+090   0031  ACKNOWLEDGEMENT REQUEST                     C 1   n1       
+
+100   0032  INTERCHANGE AGREEMENT IDENTIFIER            C 1   an..35   
+
+110   0035  TEST INDICATOR                              C 1   n1       
+
+
+NOTES:
+
+1.  S001/0002, shall be '4' to indicate this version of the syntax.
+
+2.  The combination of the values carried in data elements S002, S003 and 0020
+    shall be used to identify uniquely the interchange, for the purpose of
+    acknowledgement.
+
+------------------------------------------------------------------------------
+
+      UNE    GROUP TRAILER
+
+      Function: To end and check the completeness of a group.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0060  GROUP CONTROL COUNT                         M 1   n..6     
+
+020   0048  GROUP REFERENCE NUMBER                      M 1   an..14   1
+
+
+NOTES:
+
+1.  0048, the value shall be identical to the value in 0048 in the
+    corresponding UNG segment.
+
+------------------------------------------------------------------------------
+
+      UNG    GROUP HEADER
+
+      Function: To head, identify and specify a group of messages and/or
+                packages, which may be used for internal routing and which may
+                contain one or more message types and/or packages.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010 X 0038  MESSAGE GROUP IDENTIFICATION                C 1   an..6    1,2,4
+
+020   S006  APPLICATION SENDER IDENTIFICATION           C 1            5
+      0040   Application sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+
+030   S007  APPLICATION RECIPIENT IDENTIFICATION        C 1            5
+      0044   Application recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+
+040   S004  DATE AND TIME OF PREPARATION                C 1            3
+      0017   Date                                       M     n8
+      0019   Time                                       M     n4
+
+050   0048  GROUP REFERENCE NUMBER                      M 1   an..14   5
+
+060   0051  CONTROLLING AGENCY, CODED                   C 1   an..3    1,2,4
+
+070 X S008  MESSAGE VERSION                             C 1            1,2,4
+      0052   Message version number                     M     an..3
+      0054   Message release number                     M     an..3
+      0057   Association assigned code                  C     an..6
+
+080   0058  APPLICATION PASSWORD                        C 1   an..14   
+
+
+DEPENDENCY NOTES:
+
+1.  D2(010, 060, 070) All or none
+
+OTHER NOTES:
+
+2.  This data element is only used if the following conditions apply:
+    i) the group contains messages only, and
+    ii) the messages are of a single message type.
+
+3.  S004, if S004 is not present in UNG, the date and time of preparation is
+    the same as indicated for the interchange in S004 in UNB.
+
+4.  This data element will be deleted from the UNG segment in the next version
+    of the standard. Therefore its use in UNG is not recommended.
+
+5.  The combination of the values carried in data elements S006, S007 and 0048
+    shall be used to identify uniquely the group within its interchange, for
+    the purpose of acknowledgement.
+
+------------------------------------------------------------------------------
+
+      UNH    MESSAGE HEADER
+
+      Function: To head, identify and specify a message.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0062  MESSAGE REFERENCE NUMBER                    M 1   an..14   2
+
+020   S009  MESSAGE IDENTIFIER                          M 1            1,2
+      0065   Message type                               M     an..6
+      0052   Message version number                     M     an..3
+      0054   Message release number                     M     an..3
+      0051   Controlling agency, coded                  M     an..3
+      0057   Association assigned code                  C     an..6
+      0110   Code list directory version number         C     an..6
+      0113   Message type sub-function identification   C     an..6
+
+030   0068  COMMON ACCESS REFERENCE                     C 1   an..35   
+
+040   S010  STATUS OF THE TRANSFER                      C 1            
+      0070   Sequence of transfers                      M     n..2
+      0073   First and last transfer                    C     a1
+
+050   S016  MESSAGE SUBSET IDENTIFICATION               C 1            1
+      0115   Message subset identification              M     an..14
+      0116   Message subset version number              C     an..3
+      0118   Message subset release number              C     an..3
+      0051   Controlling agency, coded                  C     an..3
+
+060   S017  MESSAGE IMPLEMENTATION GUIDELINE
+            IDENTIFICATION                              C 1            1
+      0121   Message implementation guideline
+             identification                             M     an..14
+      0122   Message implementation guideline version
+             number                                     C     an..3
+      0124   Message implementation guideline release
+             number                                     C     an..3
+      0051   Controlling agency, coded                  C     an..3
+
+070   S018  SCENARIO IDENTIFICATION                     C 1            
+      0127   Scenario identification                    M     an..14
+      0128   Scenario version number                    C     an..3
+      0130   Scenario release number                    C     an..3
+      0051   Controlling agency, coded                  C     an..3
+
+
+NOTES:
+
+1.  Data element S009/0057 is retained for upward compatibility. The use of
+    S016 and/or S017 is encouraged in preference.
+
+2.  The combination of the values carried in data elements 0062 and S009 shall
+    be used to identify uniquely the message within its group (if used) or if
+    not used, within its interchange, for the purpose of acknowledgement.
+
+------------------------------------------------------------------------------
+
+      UNO    OBJECT HEADER
+
+      Function: To head, identify and specify an object.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0800  PACKAGE REFERENCE NUMBER                    M 1   an..35   1
+
+020   S020  REFERENCE IDENTIFICATION                    M 99           2
+      0813   Reference qualifier                        M     an..3
+      0802   Reference identification number            M     an..35
+
+030   S021  OBJECT TYPE IDENTIFICATION                  M 99           3
+      0805   Object type qualifier                      M     an..3
+      0809   Object type attribute identification       C     an..256
+      0808   Object type attribute                      C     an..256
+      0051   Controlling agency, coded                  C     an..3
+
+040   S022  STATUS OF THE OBJECT                        M 1            
+      0810   Length of object in octets of bits         M     n..18
+      0814   Number of segments before object           C     n..3
+      0070   Sequence of transfers                      C     n..2
+      0073   First and last transfer                    C     a1
+
+050   S302  DIALOGUE REFERENCE                          C 1            4
+      0300   Initiator control reference                M     an..35
+      0303   Initiator reference identification         C     an..35
+      0051   Controlling agency, coded                  C     an..3
+      0304   Responder control reference                C     an..35
+
+060   S301  STATUS OF TRANSFER - INTERACTIVE            C 1            4
+      0320   Sender sequence number                     C     n..6
+      0323   Transfer position, coded                   C     a1
+      0325   Duplicate Indicator                        C     a1
+
+070   S300  DATE AND/OR TIME OF INITIATION              C 1            4
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+080   0035  TEST INDICATOR                              C 1   n1       4
+
+
+NOTES:
+
+1.  The value in 0800 shall be unique within the interchange (except for a
+    duplicate transfer).
+
+2.  One mandatory occurrence of S020 shall identify the Object Identification
+    Number.
+
+3.  One occurrence of S021 is mandatory and shall be used for file format
+    identification.
+
+4.  Data elements S302, S301, S300 and 0035 are for interactive EDI use only:
+    - The value(s) in S302 shall be identical to the value(s) in S302 in the
+    preceding UIB.
+    - 0035, when used, test applies to the message or package only.
+
+------------------------------------------------------------------------------
+
+      UNP    OBJECT TRAILER
+
+      Function: To end and check the completeness of an object.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0810  LENGTH OF OBJECT IN OCTETS OF BITS          M 1   n..18    1
+
+020   0800  PACKAGE REFERENCE NUMBER                    M 1   an..35   2
+
+
+NOTES:
+
+1.  0810, shall be identical to the value in data element 0810 in UNO.
+
+2.  0800, shall be identical to the value in data element 0800 in UNO.
+
+------------------------------------------------------------------------------
+
+      UNS    SECTION CONTROL
+
+      Function: To separate header, detail and summary sections of a message.
+
+          Note: To be used by message designers only when required to avoid
+                ambiguities.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0081  SECTION IDENTIFICATION                      M 1   a1       
+
+------------------------------------------------------------------------------
+
+      UNT    MESSAGE TRAILER
+
+      Function: To end and check the completeness of a message.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0074  NUMBER OF SEGMENTS IN A MESSAGE             M 1   n..10    
+
+020   0062  MESSAGE REFERENCE NUMBER                    M 1   an..14   1
+
+
+NOTES:
+
+1.  0062, the value shall be identical to the value in 0062 in the
+    corresponding UNH segment.
+
+------------------------------------------------------------------------------
+
+      UNZ    INTERCHANGE TRAILER
+
+      Function: To end and check the completeness of an interchange.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0036  INTERCHANGE CONTROL COUNT                   M 1   n..6     
+
+020   0020  INTERCHANGE CONTROL REFERENCE               M 1   an..14   1
+
+
+NOTES:
+
+1.  0020, the value shall be identical to the value in 0020 in the
+    corresponding UNB segment.
+
+------------------------------------------------------------------------------
+
+      USA    SECURITY ALGORITHM
+
+      Function: To identify a security algorithm, the technical usage made of
+                it, and to contain the technical parameters required.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S502  SECURITY ALGORITHM                          M 1            
+      0523   Use of algorithm, coded                    M     an..3
+      0525   Cryptographic mode of operation, coded     C     an..3
+      0533   Mode of operation code list identifier     C     an..3
+      0527   Algorithm, coded                           C     an..3
+      0529   Algorithm code list identifier             C     an..3
+      0591   Padding mechanism, coded                   C     an..3
+      0601   Padding mechanism code list identifier     C     an..3
+
+020   S503  ALGORITHM PARAMETER                         C 9            1
+      0531   Algorithm parameter qualifier              M     an..3
+      0554   Algorithm parameter value                  M     an..512
+
+
+NOTES:
+
+1.  S503, provides space for one parameter. The number of repetitions of S503
+    actually used will depend on the algorithm used. The order of the
+    parameters is arbitrary but, in each case, the actual value is preceded by
+    a coded algorithm parameter qualifier.
+
+------------------------------------------------------------------------------
+
+      USB    SECURED DATA IDENTIFICATION
+
+      Function: To contain details related to the AUTACK.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0503  RESPONSE TYPE, CODED                        M 1   an..3    
+
+020   S501  SECURITY DATE AND TIME                      C 1            
+      0517   Date and time qualifier                    M     an..3
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+030   S002  INTERCHANGE SENDER                          M 1            
+      0004   Interchange sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+      0008   Interchange sender internal
+             identification                             C     an..35
+      0042   Interchange sender internal
+             sub-identification                         C     an..35
+
+040   S003  INTERCHANGE RECIPIENT                       M 1            
+      0010   Interchange recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+      0014   Interchange recipient internal
+             identification                             C     an..35
+      0046   Interchange recipient internal
+             sub-identification                         C     an..35
+
+------------------------------------------------------------------------------
+
+      USC    CERTIFICATE
+
+      Function: To convey the public key and the credentials of its owner.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0536  CERTIFICATE REFERENCE                       C 1   an..35   2
+
+020   S500  SECURITY IDENTIFICATION DETAILS             C 2            3
+      0577   Security party qualifier                   M     an..3
+      0538   Key name                                   C     an..35
+      0511   Security party identification              C     an..512
+      0513   Security party code list qualifier         C     an..3
+      0515   Security party code list responsible
+             agency, coded                              C     an..3
+      0586   Security party name                        C     an..35
+      0586   Security party name                        C     an..35
+      0586   Security party name                        C     an..35
+
+030   0545  CERTIFICATE SYNTAX AND VERSION, CODED       C 1   an..3    2
+
+040   0505  FILTER FUNCTION, CODED                      C 1   an..3    
+
+050   0507  ORIGINAL CHARACTER SET ENCODING, CODED      C 1   an..3    4
+
+060   0543  CERTIFICATE ORIGINAL CHARACTER SET
+            REPERTOIRE, CODED                           C 1   an..3    5
+
+070   0546  USER AUTHORISATION LEVEL                    C 1   an..35   
+
+080   S505  SERVICE CHARACTER FOR SIGNATURE             C 5            6
+      0551   Service character for signature
+             qualifier                                  M     an..3
+      0548   Service character for signature            M     an..4
+
+090   S501  SECURITY DATE AND TIME                      C 4            7
+      0517   Date and time qualifier                    M     an..3
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+100   0567  SECURITY STATUS, CODED                      C 1   an..3    1
+
+110   0569  REVOCATION REASON, CODED                    C 1   an..3    1
+
+
+DEPENDENCY NOTES:
+
+1.  D5(110, 100) If first, then all
+
+OTHER NOTES:
+
+2.  0536, if a full certificate (including the USR segment) is not used, the
+    only data elements of the certificate shall be a unique certificate
+    reference made of: the certificate reference (0536), the S500 identifying
+    the issuer certification authority or the S500 identifying the certificate
+    owner, including its public key name. In the case of a non-EDIFACT
+    certificate data element 0545 shall also be present.
+
+3.  S500/0538, identifies a public key: either of the owner of this
+    certificate, or the public key related to the private key used by the
+    certificate issuer (certification authority or CA) to sign this
+    certificate.
+
+4.  0507, the original character set encoding of the certificate when it was
+    signed. If no value is specified, the character set encoding corresponds
+    to that identified by the character set repertoire standard.
+
+5.  0543, the original character set repertoire of the certificate when it was
+    signed. If no value is specified, the default is defined in the
+    interchange header.
+
+6.  S505, when this certificate is transferred, it will use the default
+    service characters defined in part 1 of ISO 9735, or those defined in the
+    service string advice, if used. This data element may specify the service
+    characters used when the certificate was signed. If this data element is
+    not used then they are the default service characters.
+
+7.  S501, dates and times involved in the certification process. Four
+    occurrences of this composite data element are possible: one for the
+    certificate generation date and time, one for the certificate start of
+    validity period, one for the certificate end of validity period, one for
+    revocation date and time.
+
+------------------------------------------------------------------------------
+
+      USD    DATA ENCRYPTION HEADER
+
+      Function: To specify size (i.e. length of data in octets of bits) of
+                encrypted data following the segment terminator of this
+                segment.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0556  LENGTH OF DATA IN OCTETS OF BITS            M 1   n..18    
+
+020   0518  ENCRYPTION REFERENCE NUMBER                 C 1   an..35   
+
+030   0582  NUMBER OF PADDING BYTES                     C 1   n..2     
+
+------------------------------------------------------------------------------
+
+      USE    SECURITY MESSAGE RELATION
+
+      Function: To specify the relation to earlier security messages, such as
+                response to a particular request, or request for a particular
+                answer.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0565  MESSAGE RELATION, CODED                     M 1   an..3    
+
+------------------------------------------------------------------------------
+
+      USF    KEY MANAGEMENT FUNCTION
+
+      Function: To specify the type of key management function and the status
+                of a corresponding key or certificate.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0579  KEY MANAGEMENT FUNCTION QUALIFIER           C 1   an..3    
+
+020   S504  LIST PARAMETER                              C 1            
+      0575   List parameter qualifier                   M     an..3
+      0558   List parameter                             M     an..70
+
+030   0567  SECURITY STATUS, CODED                      C 1   an..3    
+
+040   0572  CERTIFICATE SEQUENCE NUMBER                 C 1   n..4     
+
+050   0505  FILTER FUNCTION, CODED                      C 1   an..3    
+
+------------------------------------------------------------------------------
+
+      USH    SECURITY HEADER
+
+      Function: To specify a security mechanism applied to a EDIFACT structure
+                (i.e.: either message/package, group or interchange).
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0501  SECURITY SERVICE, CODED                     M 1   an..3    
+
+020   0534  SECURITY REFERENCE NUMBER                   M 1   an..14   
+
+030   0541  SCOPE OF SECURITY APPLICATION, CODED        C 1   an..3    1
+
+040   0503  RESPONSE TYPE, CODED                        C 1   an..3    
+
+050   0505  FILTER FUNCTION, CODED                      C 1   an..3    
+
+060   0507  ORIGINAL CHARACTER SET ENCODING, CODED      C 1   an..3    2
+
+070   0509  ROLE OF SECURITY PROVIDER, CODED            C 1   an..3    
+
+080   S500  SECURITY IDENTIFICATION DETAILS             C 2            3,4
+      0577   Security party qualifier                   M     an..3
+      0538   Key name                                   C     an..35
+      0511   Security party identification              C     an..512
+      0513   Security party code list qualifier         C     an..3
+      0515   Security party code list responsible
+             agency, coded                              C     an..3
+      0586   Security party name                        C     an..35
+      0586   Security party name                        C     an..35
+      0586   Security party name                        C     an..35
+
+090   0520  SECURITY SEQUENCE NUMBER                    C 1   an..35   
+
+100   S501  SECURITY DATE AND TIME                      C 1            5
+      0517   Date and time qualifier                    M     an..3
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+
+NOTES:
+
+1.  0541, if not present the default scope is the current security header
+    segment group and the message body or object itself.
+
+2.  0507, the original character set encoding of the EDIFACT structure when it
+    was secured. If no value is specified, the character set encoding
+    corresponds to that identified by the syntax identifier character
+    repertoire in the UNB segment.
+
+3.  S500, two occurrences are possible: one for the security originator, one
+    for the security recipient.
+
+4.  S500/0538, may be used to establish the key relationship between the
+    sending and receiving parties.
+
+5.  S501, may be used as a security timestamp. It is security related and may
+    differ from any dates and times that may appear elsewhere in the EDIFACT
+    structure. It may be used to provide sequence integrity.
+
+------------------------------------------------------------------------------
+
+      USL    SECURITY LIST STATUS
+
+      Function: To specify the status of security objects, such as keys or
+                certificates to be delivered in a list, and the corresponding
+                list parameters.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0567  SECURITY STATUS, CODED                      M 1   an..3    
+
+020   S504  LIST PARAMETER                              C 9            
+      0575   List parameter qualifier                   M     an..3
+      0558   List parameter                             M     an..70
+
+------------------------------------------------------------------------------
+
+      USR    SECURITY RESULT
+
+      Function: To contain the result of the security mechanisms.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   S508  VALIDATION RESULT                           M 2            1
+      0563   Validation value, qualifier                M     an..3
+      0560   Validation value                           C     an..512
+
+
+NOTES:
+
+1.  S508, two occurrences shall be used in the case of signature algorithms
+    requiring two parameters to express the result.
+    In the case of an RSA signature, only one occurrence of S508 shall be
+    used.
+    In the case of a DSA signature two occurrences of S508 shall be used.
+
+------------------------------------------------------------------------------
+
+      UST    SECURITY TRAILER
+
+      Function: To establish a link between security header and security
+                trailer segment groups.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0534  SECURITY REFERENCE NUMBER                   M 1   an..14   1
+
+020   0588  NUMBER OF SECURITY SEGMENTS                 M 1   n..10    
+
+
+NOTES:
+
+1.  0534, the value shall be identical to the value in 0534 in the
+    corresponding USH segment.
+
+------------------------------------------------------------------------------
+
+      USU    DATA ENCRYPTION TRAILER
+
+      Function: To provide a trailer for the encrypted data.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0556  LENGTH OF DATA IN OCTETS OF BITS            M 1   n..18    1
+
+020   0518  ENCRYPTION REFERENCE NUMBER                 C 1   an..35   2
+
+
+NOTES:
+
+1.  0556, the value shall be identical to the value in 0556 in the
+    corresponding USD segment.
+
+2.  0518, the value shall be identical to the value in 0518 in the
+    corresponding USD segment.
+
+------------------------------------------------------------------------------
+
+      USX    SECURITY REFERENCES
+
+      Function: To refer to the secured EDIFACT structure and its associated
+                date and time.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0020  INTERCHANGE CONTROL REFERENCE               M 1   an..14   
+
+020   S002  INTERCHANGE SENDER                          C 1            
+      0004   Interchange sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+      0008   Interchange sender internal
+             identification                             C     an..35
+      0042   Interchange sender internal
+             sub-identification                         C     an..35
+
+030   S003  INTERCHANGE RECIPIENT                       C 1            
+      0010   Interchange recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+      0014   Interchange recipient internal
+             identification                             C     an..35
+      0046   Interchange recipient internal
+             sub-identification                         C     an..35
+
+040   0048  GROUP REFERENCE NUMBER                      C 1   an..14   1,3
+
+050   S006  APPLICATION SENDER IDENTIFICATION           C 1            1
+      0040   Application sender identification          M     an..35
+      0007   Identification code qualifier              C     an..4
+
+060   S007  APPLICATION RECIPIENT IDENTIFICATION        C 1            3
+      0044   Application recipient identification       M     an..35
+      0007   Identification code qualifier              C     an..4
+
+070   0062  MESSAGE REFERENCE NUMBER                    C 1   an..14   2,4
+
+080   S009  MESSAGE IDENTIFIER                          C 1            4
+      0065   Message type                               M     an..6
+      0052   Message version number                     M     an..3
+      0054   Message release number                     M     an..3
+      0051   Controlling agency, coded                  M     an..3
+      0057   Association assigned code                  C     an..6
+      0110   Code list directory version number         C     an..6
+      0113   Message type sub-function identification   C     an..6
+
+090   0800  PACKAGE REFERENCE NUMBER                    C 1   an..35   2
+
+100   S501  SECURITY DATE AND TIME                      C 1            
+      0517   Date and time qualifier                    M     an..3
+      0338   Event date                                 C     n..8
+      0314   Event time                                 C     an..15
+      0336   Time offset                                C     n4
+
+
+DEPENDENCY NOTES:
+
+1.  D5(050, 040) If first, then all
+
+2.  D1(070, 090) One and only one
+
+3.  D5(060, 040) If first, then all
+
+4.  D5(080, 070) If first, then all
+
+------------------------------------------------------------------------------
+
+      USY    SECURITY ON REFERENCES
+
+      Function: To identify the applicable header, and to contain the security
+                result and/or to indicate the possible cause of security
+                rejection for the referred value.
+
+Pos   TAG   Name                                        S R   Repr.    Notes
+
+010   0534  SECURITY REFERENCE NUMBER                   M 1   an..14   
+
+020   S508  VALIDATION RESULT                           C 2            1
+      0563   Validation value, qualifier                M     an..3
+      0560   Validation value                           C     an..512
+
+030   0571  SECURITY ERROR, CODED                       C 1   an..3    1
+
+
+DEPENDENCY NOTES:
+
+1.  D3(020, 030) One or more
+
+-
