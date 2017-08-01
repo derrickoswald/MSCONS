@@ -103,6 +103,7 @@ object TestServiceCodeList extends ServiceCodeList
         parse (servicecodes, text) match
         {
             case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.number + " " + sc.title + " (" + sc.representation + ")").mkString ("\n"))
+                println (matched.filter (_.number == 65).head.items.filter (_.value == "MSCONS").head)
             case Failure (msg, _) => println ("FAILURE: " + msg)
             case Error (msg, _) => println ("ERROR: " + msg)
         }
