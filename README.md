@@ -16,8 +16,6 @@ The program will also be able to write MSCONS files as output.
 
 # References
 
-United Nations Economic Commission for Europe (UNECE) serves as the focal point for trade facilitation recommendations and electronic business standards, covering both commercial and government business processes that can foster growth in international trade and related services.  In this context, the  
-
 The web site of the United Nations Economic Commission for Europe (UNECE) - the group responsible for EDIFACT [United Nations Centre for Trade Facilitation and Electronic Business (UN/CEFACT)](http://www.unece.org/cefact/edifact/welcome.html).
 
 A description of [EDIFACT message application level syntax rules](http://www.unece.org/tradewelcome/un-centre-for-trade-facilitation-and-e-business-uncefact/outputs/standards/unedifact/tradeedifactrules/part-4-edifact-rules-for-electronic-data-interchange-for-administration-commerce-and-transport/part-4-unedifact-rules-chapter-22-syntax-rules/part-4-unedifact-rules-chapter-22-syntax-rules-annex-b.html).
