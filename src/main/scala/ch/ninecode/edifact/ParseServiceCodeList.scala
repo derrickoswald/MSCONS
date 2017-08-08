@@ -5,31 +5,19 @@ import java.util.regex.Pattern
 import scala.io.Source
 import scala.util.parsing.combinator._
 
-case class ServiceCode (
-    number: Int,
-    title: String,
-    description: String,
-    representation: String,
-    items: List[Code])
-
-case class Code (
-    value: String,
-    title: String,
-    description: String)
-
 // parse Service code list UNSL
 // service code list from http://www.gefeg.com/jswg/v4x/data/v4x.html
 // link: http://www.gefeg.com/jswg/cl/data/sl40210.zip
 // edited and converted to UTF-8 encoding
 
-class ServiceCodeList extends RegexParsers
+class ParseServiceCodeList extends RegexParsers
 {
     override val skipWhitespace = false
     def header: Parser[String]    = """[^-]*""".r ^^ { _.toString }
     val code = new Parser[Code]
     {
-        val pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*\n)*)""")
-        def apply (in: Input) =
+        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*\n)*)""")
+        def apply (in: Input): ParseResult[Code] =
         {
             val source = in.source
             val offset = in.offset
@@ -52,10 +40,10 @@ class ServiceCodeList extends RegexParsers
                 Failure ("Code not found", in)
         }
     }
-    val servicecode = new Parser[ServiceCode]
+    val servicecode = new Parser[CodeList]
     {
-        val pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)\n\n""")
-        def apply (in: Input) =
+        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)\n\n""")
+        def apply (in: Input): ParseResult[CodeList] =
         {
             val source = in.source
             val offset = in.offset
@@ -76,7 +64,7 @@ class ServiceCodeList extends RegexParsers
                     case Error (msg, _) => println ("ERROR: " + msg)
                 }
                 val sc =
-                    ServiceCode (
+                    CodeList (
                         matcher.group (1).toInt,
                         matcher.group (2),
                         matcher.group (3),
@@ -86,16 +74,17 @@ class ServiceCodeList extends RegexParsers
                 Success (sc, in.drop (matcher.end))
             }
             else
-                Failure ("ServiceCode not found", in)
+                Failure ("CodeList not found", in)
         }
     }
 
     def codes: Parser[List[Code]] = code.*
-    def servicecodes: Parser[List[ServiceCode]] = header ~ servicecode.* ^^ { case h ~ s => s }
+    def servicecodes: Parser[List[CodeList]] = header ~ servicecode.* ^^ { case h ~ s => s }
 }
-object TestServiceCodeList extends ServiceCodeList
+
+object TestParseServiceCodeList extends ParseServiceCodeList
 {
-    def main (args: Array[String]) =
+    def main (args: Array[String]): Unit =
     {
         val source = Source.fromFile ("ref/sl40210.txt", "UTF-8")
         val text = source.getLines.mkString ("\n")

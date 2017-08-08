@@ -26,7 +26,7 @@ case class Field (
 // specification from http://www.gefeg.com/jswg/v4/data/v4.html
 // link: http://www.gefeg.com/jswg/v4/data/s40000.zip
 // edited and changed Ä to -
-class ServiceSegmentList extends RegexParsers
+class ParseServiceSegmentList extends RegexParsers
 {
     override val skipWhitespace = false
 
@@ -87,10 +87,9 @@ class ServiceSegmentList extends RegexParsers
                 else
                     f
         }
-        def apply (in: Input) =
+        def apply (in: Input): Success[List[Field]] =
         {
             val source = in.source
-            val offset = in.offset
             val parts = source.toString.split ("\n\n")
             val fields = parts.map (parseField).toList
             Success (fields, in.drop (in.toString.length))
@@ -99,8 +98,8 @@ class ServiceSegmentList extends RegexParsers
 
     val servicesegment = new Parser[ServiceSegment]
     {
-        val pattern = Pattern.compile ("""-{78}\n\n[\+\*\#\|X]?\s*(\S*)\s*(.*)\n\n\s*Function: ([\S\s]*?)\n\nPos   TAG   Name                                        S R   Repr.    Notes\n\n([\S\s]*?)(\n\n\n[\S\s]*?)??\n\n(?=-)""")
-        def apply (in: Input) =
+        val pattern: Pattern = Pattern.compile ("""-{78}\n\n[\+\*\#\|X]?\s*(\S*)\s*(.*)\n\n\s*Function: ([\S\s]*?)\n\nPos   TAG   Name                                        S R   Repr.    Notes\n\n([\S\s]*?)(\n\n\n[\S\s]*?)??\n\n(?=-)""")
+        def apply (in: Input): ParseResult[ServiceSegment] =
         {
             val source = in.source
             val offset = in.offset
@@ -136,9 +135,10 @@ class ServiceSegmentList extends RegexParsers
 
     def servicesegments: Parser[List[ServiceSegment]] = servicesegment.*
 }
-object TestServiceSegmentList extends ServiceSegmentList
+
+object TestParseServiceSegmentList extends ParseServiceSegmentList
 {
-    def main (args: Array[String]) =
+    def main (args: Array[String]): Unit =
     {
         val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
         val text = source.getLines.mkString ("\n")
