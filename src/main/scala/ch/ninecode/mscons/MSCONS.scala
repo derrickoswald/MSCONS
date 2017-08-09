@@ -554,7 +554,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                         case 0 =>
                             throw new Exception ("illegal state exception")
 
-                        case 170 =>// NAD
+                        case 170 => // NAD
                             name = ParseNameAndAddress (seg)
                             state = 190
 

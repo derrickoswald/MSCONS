@@ -146,7 +146,7 @@ object TestParseServiceSegmentList extends ParseServiceSegmentList
         parse (servicesegments, text) match
         {
             case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.tag + " " + sc.name + " " + sc.fields.length + " fields").mkString ("\n"))
-                println (matched.filter (_.tag == "UNH").head)
+                println (matched.filter (_.tag == "UNB").head)
             case Failure (msg, _) => println ("FAILURE: " + msg)
             case Error (msg, _) => println ("ERROR: " + msg)
         }

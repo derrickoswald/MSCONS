@@ -3,7 +3,6 @@ package ch.ninecode.mscons
 import java.nio.ByteBuffer
 
 import org.scalatest.FunSuite
-import org.scalatest.junit.JUnitRunner
 
 class MSCONSSuite extends FunSuite
 {
@@ -14,7 +13,7 @@ class MSCONSSuite extends FunSuite
      */
     def segToString (buffer: ByteBuffer): String =
     {
-        val ret = if (buffer.hasArray && !buffer.isReadOnly)
+        if (buffer.hasArray && !buffer.isReadOnly)
             new String (buffer.array, buffer.arrayOffset, buffer.limit, "UTF-8")
         else
         {
@@ -22,7 +21,6 @@ class MSCONSSuite extends FunSuite
             buffer.get (bytes)
             new String (bytes, "UTF-8")
         }
-        return (ret)
     }
 
     test ("UNA 1 - default")
