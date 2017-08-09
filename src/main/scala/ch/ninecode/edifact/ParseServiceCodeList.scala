@@ -2,7 +2,6 @@ package ch.ninecode.edifact
 
 import java.util.regex.Pattern
 
-import scala.io.Source
 import scala.util.parsing.combinator._
 
 // parse Service code list UNSL
@@ -13,10 +12,11 @@ import scala.util.parsing.combinator._
 class ParseServiceCodeList extends RegexParsers
 {
     override val skipWhitespace = false
+    def removeLeadingSpaces (s: String): String = s.split ("\n").map (_.trim).mkString ("\n")
     def header: Parser[String]    = """[^-]*""".r ^^ { _.toString }
     val code = new Parser[Code]
     {
-        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*\n)*)""")
+        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*(?:\n|\z))*)""")
         def apply (in: Input): ParseResult[Code] =
         {
             val source = in.source
@@ -27,7 +27,6 @@ class ParseServiceCodeList extends RegexParsers
 //                println ("g1(" + matcher.group (1) + ")")
 //                println ("g2(" + matcher.group (2) + ")")
 //                println ("g3(" + matcher.group (3).substring (0, Math.min (20, matcher.group (3).length)) + "...)")
-                def removeLeadingSpaces (s: String): String = s.split ("\n").map (_.trim).mkString ("\n")
                 val cd =
                     Code (
                         matcher.group (1),
@@ -67,7 +66,7 @@ class ParseServiceCodeList extends RegexParsers
                     CodeList (
                         matcher.group (1).toInt,
                         matcher.group (2),
-                        matcher.group (3),
+                        removeLeadingSpaces (matcher.group (3)),
                         matcher.group (4),
                         items
                        )
@@ -80,21 +79,4 @@ class ParseServiceCodeList extends RegexParsers
 
     def codes: Parser[List[Code]] = code.*
     def servicecodes: Parser[List[CodeList]] = header ~ servicecode.* ^^ { case h ~ s => s }
-}
-
-object TestParseServiceCodeList extends ParseServiceCodeList
-{
-    def main (args: Array[String]): Unit =
-    {
-        val source = Source.fromFile ("ref/sl40210.txt", "UTF-8")
-        val text = source.getLines.mkString ("\n")
-        source.close
-        parse (servicecodes, text) match
-        {
-            case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.number + " " + sc.title + " (" + sc.representation + ")").mkString ("\n"))
-                println (matched.filter (_.number == 65).head.items.filter (_.value == "MSCONS").head)
-            case Failure (msg, _) => println ("FAILURE: " + msg)
-            case Error (msg, _) => println ("ERROR: " + msg)
-        }
-    }
 }

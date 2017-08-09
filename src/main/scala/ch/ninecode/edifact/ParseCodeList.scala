@@ -2,7 +2,6 @@ package ch.ninecode.edifact
 
 import java.util.regex.Pattern
 
-import scala.io.Source
 import scala.util.parsing.combinator._
 
 // parse Code list UNCL
@@ -15,7 +14,7 @@ class ParseCodeList extends RegexParsers
     def header: Parser[String]    = """[^-]*""".r ^^ { _.toString }
     val code = new Parser[Code]
     {
-        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*\n)*)""")
+        val pattern: Pattern = Pattern.compile ("""\s*(\S*)([\s\S]*?)(?: {11}?)([\s\S]*?)(?:\n\n|\z)""")
         def apply (in: Input): ParseResult[Code] =
         {
             val source = in.source
@@ -30,7 +29,7 @@ class ParseCodeList extends RegexParsers
                 val cd =
                     Code (
                         matcher.group (1),
-                        matcher.group (2),
+                        matcher.group (2).trim,
                         removeLeadingSpaces (matcher.group (3))
                        )
                 Success (cd, in.drop (matcher.end))
@@ -41,7 +40,7 @@ class ParseCodeList extends RegexParsers
     }
     val codelist = new Parser[CodeList]
     {
-        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)\n\n\n""")
+        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)(?:\n\n\n|\z)""")
         def apply (in: Input): ParseResult[CodeList] =
         {
             val source = in.source
@@ -54,6 +53,7 @@ class ParseCodeList extends RegexParsers
 //                println ("g2(" + matcher.group (2) + ")")
 //                println ("g3(" + matcher.group (3) + ")")
 //                println ("g4(" + matcher.group (4) + ")")
+//                println ("g5(" + matcher.group (5) + ")")
                 var items: List[Code] = null
                 val text = matcher.group (5)
                 parse (codes, text) match
@@ -78,22 +78,5 @@ class ParseCodeList extends RegexParsers
     }
 
     def codes: Parser[List[Code]] = code.*
-    def servicecodes: Parser[List[CodeList]] = header ~ codelist.* ^^ { case h ~ s => s }
-}
-
-object TestParseCodeList extends ParseCodeList
-{
-    def main (args: Array[String]): Unit =
-    {
-        val source = Source.fromFile ("ref/d17a/uncl/UNCL.17A", "UTF-8")
-        val text = source.getLines.mkString ("\n")
-        source.close
-        parse (servicecodes, text) match
-        {
-            case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.number + " " + sc.title + " (" + sc.representation + ")").mkString ("\n"))
-                println (matched.head)
-            case Failure (msg, _) => println ("FAILURE: " + msg)
-            case Error (msg, _) => println ("ERROR: " + msg)
-        }
-    }
+    def servicecodes: Parser[List[CodeList]] = header ~ codelist.* ^^ { case _ ~ s => s }
 }

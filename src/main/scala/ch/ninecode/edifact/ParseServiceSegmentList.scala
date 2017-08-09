@@ -2,25 +2,7 @@ package ch.ninecode.edifact
 
 import java.util.regex.Pattern
 
-import scala.io.Source
 import scala.util.parsing.combinator._
-
-case class ServiceSegment (
-    tag: String,
-    name: String,
-    description: String,
-    fields: List[Field],
-    notes: String)
-
-case class Field (
-    position: Int,
-    tag: String,
-    name: String,
-    status: String,
-    repetition: String,
-    representation: String,
-    notes: String,
-    subfields: List[Field])
 
 // parse Service segment specifications
 // specification from http://www.gefeg.com/jswg/v4/data/v4.html
@@ -29,6 +11,7 @@ case class Field (
 class ParseServiceSegmentList extends RegexParsers
 {
     override val skipWhitespace = false
+    def removeLeadingSpaces (s: String): String = s.split ("\n").map (_.trim).mkString ("\n")
 
     // parse fixed field format:
     //Pos   TAG   Name                                        S R   Repr.    Notes
@@ -73,6 +56,7 @@ class ParseServiceSegmentList extends RegexParsers
                         line += 1
                         s = s.copy (
                             name = s.name.trim + " " + extra.name.trim,
+                            status = extra.status,
                             repetition = extra.repetition,
                             representation = extra.representation,
                             notes = s.notes.trim + extra.notes.trim)
@@ -122,7 +106,7 @@ class ParseServiceSegmentList extends RegexParsers
                     ServiceSegment (
                         matcher.group (1),
                         matcher.group (2),
-                        matcher.group (3),
+                        removeLeadingSpaces (matcher.group (3)),
                         items,
                         matcher.group (5)
                        )
@@ -134,21 +118,4 @@ class ParseServiceSegmentList extends RegexParsers
     }
 
     def servicesegments: Parser[List[ServiceSegment]] = servicesegment.*
-}
-
-object TestParseServiceSegmentList extends ParseServiceSegmentList
-{
-    def main (args: Array[String]): Unit =
-    {
-        val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
-        val text = source.getLines.mkString ("\n")
-        source.close
-        parse (servicesegments, text) match
-        {
-            case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.tag + " " + sc.name + " " + sc.fields.length + " fields").mkString ("\n"))
-                println (matched.filter (_.tag == "UNB").head)
-            case Failure (msg, _) => println ("FAILURE: " + msg)
-            case Error (msg, _) => println ("ERROR: " + msg)
-        }
-    }
 }
