@@ -78,5 +78,5 @@ class ParseServiceCodeList extends RegexParsers
     }
 
     def codes: Parser[List[Code]] = code.*
-    def servicecodes: Parser[List[CodeList]] = header ~ servicecode.* ^^ { case h ~ s => s }
+    def list: Parser[List[CodeList]] = header.? ~ servicecode.* ^^ { case _ ~ s => s }
 }

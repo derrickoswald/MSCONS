@@ -5,33 +5,17 @@ import java.nio.ByteBuffer
 import scala.io.Source
 import org.scalatest.FunSuite
 
+import scala.util.parsing.input.Reader
+
 class EDIFACTSuite extends FunSuite
 {
-
-    object TestParseServiceSegmentList extends ParseServiceSegmentList
-    {
-        def main (args: Array[String]): Unit =
-        {
-            val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
-            val text = source.getLines.mkString ("\n")
-            source.close
-            parse (servicesegments, text) match
-            {
-                case Success (matched, _) => println ("SUCCESS:\n" + matched.map (sc => sc.tag + " " + sc.name + " " + sc.fields.length + " fields").mkString ("\n"))
-                    println (matched.filter (_.tag == "UNB").head)
-                case Failure (msg, _) => println ("FAILURE: " + msg)
-                case Error (msg, _) => println ("ERROR: " + msg)
-            }
-        }
-    }
-
     test ("ParseServiceSegmentList")
     {
         val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseServiceSegmentList ()
-        parser.parse (parser.servicesegments, text) match
+        parser.parse (parser.list, text) match
         {
             case parser.Success (matched: List[ServiceSegment], _) =>
                 // println ("SUCCESS:\n" + matched.map (sc => sc.tag + " " + sc.name + " " + sc.fields.length + " fields").mkString ("\n"))
@@ -90,7 +74,7 @@ class EDIFACTSuite extends FunSuite
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseServiceCodeList ()
-        parser.parse (parser.servicecodes, text) match
+        parser.parse (parser.list, text) match
         {
             case parser.Success (matched: List[CodeList], _) =>
                 // println ("SUCCESS:\n" + matched.map (sc => sc.number + " " + sc.title + " (" + sc.representation + ")").mkString ("\n"))
@@ -120,7 +104,7 @@ class EDIFACTSuite extends FunSuite
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseCodeList ()
-        parser.parse (parser.servicecodes, text) match
+        parser.parse (parser.list, text) match
         {
             case parser.Success (matched: List[CodeList], _) =>
                 // println ("SUCCESS:\n" + matched.map (sc => sc.number + " " + sc.title + " (" + sc.representation + ")").mkString ("\n"))
@@ -151,6 +135,45 @@ class EDIFACTSuite extends FunSuite
                 assert (matched.last.items.last.description == "Defines information required to process the contents of\na statistical array.")
             case parser.Failure (msg, _) => fail (msg)
             case parser.Error (msg, _) => fail (msg)
+        }
+    }
+
+    test ("ParseSegmentwithUNA")
+    {
+        val buffer = ByteBuffer.wrap ("UNA:+.? 'UNB'".getBytes)
+        val parser = new SegmentParser
+        val reader: Reader[Char] = new ByteBufferReader (buffer)
+        parser.parse (parser.message, reader) match
+        {
+            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
+            case parser.Failure (msg, _) => fail (msg)
+            case parser.Error (msg, _) => fail (msg)
+        }
+    }
+
+    test ("ParseSegmentwithoutUNA")
+    {
+        val buffer = ByteBuffer.wrap ("UNB'".getBytes)
+        val parser = new SegmentParser
+        val reader: Reader[Char] = new ByteBufferReader (buffer)
+        parser.parse (parser.message, reader) match
+        {
+            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
+            case parser.Failure (msg, _) => fail (msg)
+            case parser.Error (msg, _) => fail (msg)
+        }
+    }
+
+    test ("ParseSegmentwithoutSegmentTerminator")
+    {
+        val buffer = ByteBuffer.wrap ("UNB".getBytes)
+        val parser = new SegmentParser
+        val reader: Reader[Char] = new ByteBufferReader (buffer)
+        parser.parse (parser.message, reader) match
+        {
+            case parser.Success (matched: List[Segment], _) => fail ("shouldn't succeed")
+            case parser.Failure (msg, _) => fail (msg)
+            case parser.Error (msg, _) => assertResult ("segment terminator not found", "EOF not handled")(msg)
         }
     }
 }

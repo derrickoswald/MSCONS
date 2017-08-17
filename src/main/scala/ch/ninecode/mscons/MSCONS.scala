@@ -1,9 +1,6 @@
 package ch.ninecode.mscons
 
-import java.io.FileInputStream
-import java.io.BufferedInputStream
 import java.nio.channels.FileChannel
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.nio.file.FileSystems
 import java.nio.ByteBuffer
@@ -35,7 +32,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
      */
     def segToString (buffer: ByteBuffer): String =
     {
-        val ret = if (buffer.hasArray && !buffer.isReadOnly)
+        if (buffer.hasArray && !buffer.isReadOnly)
             new String (buffer.array, buffer.arrayOffset, buffer.limit, "UTF-8")
         else
         {
@@ -43,7 +40,6 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             buffer.get (bytes)
             new String (bytes, "UTF-8")
         }
-        return (ret)
     }
 
     /**
@@ -58,7 +54,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var ret = 0
         while (0 < buffer.remaining)
             ret = ret * 10 + (buffer.get () - '0')
-        return (ret)
+        ret
     }
 
     /**
@@ -70,9 +66,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
      */
     def segToDouble (buffer: ByteBuffer): Double =
     {
-        var ret = segToString (buffer).replace (decimal_notification.toChar, '.').toDouble
-
-        return (ret)
+        segToString (buffer).replace (decimal_notification.toChar, '.').toDouble
     }
 
     def debugPrint (buffer: ByteBuffer): Unit =

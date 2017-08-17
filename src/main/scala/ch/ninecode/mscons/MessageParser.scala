@@ -1,7 +1,8 @@
 package ch.ninecode.mscons
 
-import java.util.regex.Pattern
 import java.util.Properties
+
+import ch.ninecode.edifact.{UNA, UNAParser}
 import org.slf4j.LoggerFactory
 
 import scala.util.parsing.combinator._

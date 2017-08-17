@@ -10,6 +10,7 @@
 *.iml
 .idea
 *~
+project/
 
 # eclipse specific git ignore
 .project

@@ -117,5 +117,5 @@ class ParseServiceSegmentList extends RegexParsers
         }
     }
 
-    def servicesegments: Parser[List[ServiceSegment]] = servicesegment.*
+    def list: Parser[List[ServiceSegment]] = servicesegment.*
 }

@@ -1,4 +1,4 @@
-package ch.ninecode.mscons
+package ch.ninecode.edifact
 
 import java.util.regex.Pattern
 
@@ -16,11 +16,11 @@ class UNAParser extends RegexParsers
     val pattern: Pattern = Pattern.compile ("""UNA(.)(.)(.)(.)(.)(.)""")
     val una = new Parser[UNA]
     {
-        def apply (in: Input) =
+        def apply (in: Input): ParseResult[UNA] =
         {
             val source = in.source
             val offset = in.offset
-            val matcher = pattern.matcher (source) // ToDo: use offset
+            val matcher = pattern.matcher (source.subSequence (offset, offset + 9)) // at most 9 characters
             if (matcher.find ())
                 Success (
                     UNA (
@@ -33,7 +33,7 @@ class UNAParser extends RegexParsers
                    in.drop (matcher.end - offset)
                 )
             else
-                Success (UNA (), in)
+                Failure ("", in)
         }
     }
     def parse (in: java.lang.CharSequence): ParseResult[UNA] =

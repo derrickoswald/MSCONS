@@ -1,4 +1,4 @@
-package ch.ninecode.mscons
+package ch.ninecode.edifact
 
 case class UNA
 (
@@ -8,4 +8,3 @@ case class UNA
    release_character:Int = "?".codePointAt (0), // ToDo: a space character means the release character is not used
    segment_terminator:Int = "'".codePointAt (0)
 )
-
