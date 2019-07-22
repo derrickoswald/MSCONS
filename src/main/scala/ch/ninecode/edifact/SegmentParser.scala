@@ -1,31 +1,9 @@
 package ch.ninecode.edifact
 
-import java.nio.ByteBuffer
 import java.util.regex.Pattern
 
-import scala.collection.immutable.PagedSeq
 import scala.util.parsing.combinator.Parsers
-import scala.util.parsing.input.{PagedSeqReader, Reader}
-
-case class ByteBufferIterator (buffer: ByteBuffer) extends Iterator[Char]
-{
-    override def hasNext: Boolean = buffer.hasRemaining
-
-    override def next (): Char = buffer.get.asInstanceOf[Char]
-}
-
-class ByteBufferReader (buffer: ByteBuffer, override val offset: Int) extends PagedSeqReader (PagedSeq.fromIterator (ByteBufferIterator (buffer)), offset)
-{
-    /** Construct a `ByteBufferReader` with its first element at
-     *  `source(0)` and position `(1,1)`.
-     */
-    def this (buffer: ByteBuffer) = this (buffer, 0)
-}
-
-case class Segment (name: String, contents: List[String])
-{
-
-}
+import scala.util.parsing.input.Reader
 
 class SegmentParser extends Parsers
 {
@@ -35,11 +13,11 @@ class SegmentParser extends Parsers
     def parse[T] (p: Parser[T], in: Reader[Char]): ParseResult[T] =
         p(in)
 
-    val pattern: Pattern = Pattern.compile ("""UNA(.)(.)(.)(.)(.)(.)""")
     val unaparser = new Parser[UNA]
     {
         def apply (in: Input): ParseResult[UNA] =
         {
+            val pattern: Pattern = Pattern.compile ("""UNA(.)(.)(.)(.)(.)(.)""")
             val source = in.source
             val offset = in.offset
             val matcher = pattern.matcher (source.subSequence (offset, offset + 9)) // at most 9 characters
@@ -120,7 +98,7 @@ class SegmentParser extends Parsers
                                 val seg =
                                     Segment (
                                         name,
-                                        List [String](array.subSequence (3, array.length).toString)
+                                        array.subSequence (3, array.length).toString
                                     )
                                 Success (seg, rest)
                             }
@@ -136,8 +114,5 @@ class SegmentParser extends Parsers
         }
     }
 
-    def message: Parser[List[Segment]] =
-    {
-        unaparser | success (UNA ()) into (una => segment (una).*)
-    }
+    def message: Parser[List[Segment]] = unaparser | success (UNA ()) into (una => segment (una).*)
 }

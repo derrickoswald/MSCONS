@@ -28,6 +28,7 @@
         <version.dependency.scala>2.11</version.dependency.scala>
         <version.dependency.scalalibrary>2.11.8</version.dependency.scalalibrary>
         <version.dependency.scalatest>3.0.1</version.dependency.scalatest>
+        <version.dependency.scalamavenplugin>4.1.0</version.dependency.scalamavenplugin>
         <version.dependency.scopt>3.5.0</version.dependency.scopt>
         <version.dependency.spark>2.0.2</version.dependency.spark>
     </properties>
@@ -96,7 +97,7 @@
                      https://mvnrepository.com/artifact/net.alchim31.maven/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>3.2.2</version>
+                <version>${version.dependency.scalamavenplugin}</version>
                 <configuration>
                     <scalaCompatVersion>${version.dependency.scala}</scalaCompatVersion>
                     <scalaVersion>${version.dependency.scalalibrary}</scalaVersion>

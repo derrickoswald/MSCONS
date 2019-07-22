@@ -1,14 +1,32 @@
 package ch.ninecode.edifact
 
 import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.{FileSystems, StandardOpenOption}
 
 import scala.io.Source
 import org.scalatest.FunSuite
 
-import scala.util.parsing.input.Reader
+import scala.collection.immutable.PagedSeq
+import scala.util.parsing.input.{PagedSeqReader, Reader}
 
 class EDIFACTSuite extends FunSuite
 {
+    case class ByteBufferIterator (buffer: ByteBuffer) extends Iterator[Char]
+    {
+        override def hasNext: Boolean = buffer.hasRemaining
+
+        override def next (): Char = buffer.get.asInstanceOf[Char]
+    }
+
+    class ByteBufferReader (buffer: ByteBuffer, override val offset: Int) extends PagedSeqReader (PagedSeq.fromIterator (ByteBufferIterator (buffer)), offset)
+    {
+        /** Construct a `ByteBufferReader` with its first element at
+         *  `source(0)` and position `(1,1)`.
+         */
+        def this (buffer: ByteBuffer) = this (buffer, 0)
+    }
+
     test ("ParseServiceSegmentList")
     {
         val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
@@ -175,6 +193,28 @@ class EDIFACTSuite extends FunSuite
             case parser.Failure (msg, _) => fail (msg)
             case parser.Error (msg, _) => assertResult ("segment terminator not found", "EOF not handled")(msg)
         }
+    }
+
+    test ("ParseSample")
+    {
+        val before = System.nanoTime
+
+        val path = FileSystems.getDefault.getPath ("data/MSCONS_LG_12X-0000000858-F_12X-0000000858-F_20140314_1407300597853.txt");
+        val file = FileChannel.open (path, StandardOpenOption.READ)
+        val size = file.size ()
+        val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0l, size)
+        file.close ()
+
+        val parser = new SegmentParser
+        val reader: Reader[Char] = new ByteBufferReader (buffer)
+        parser.parse (parser.message, reader) match
+        {
+            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
+            case parser.Failure (msg, _) => fail (msg)
+            case parser.Error (msg, _) => fail (msg)
+        }
+        val after = System.nanoTime
+        info ("reading %d bytes took %g seconds".format (size, (after - before) / 1e9))
     }
 }
 
