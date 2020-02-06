@@ -8,7 +8,6 @@ import java.util.regex.Pattern
 
 class MSCONS (val buffer: ByteBuffer) extends Serializable
 {
-    // stupid funky scala syntax to "import" the companion object constant declarations
     import MSCONS._
 
     // For a description of EDIFACT message application level syntax rules, see http://www.unece.org/tradewelcome/un-centre-for-trade-facilitation-and-e-business-uncefact/outputs/standards/unedifact/tradeedifactrules/part-4-edifact-rules-for-electronic-data-interchange-for-administration-commerce-and-transport/part-4-unedifact-rules-chapter-22-syntax-rules/part-4-unedifact-rules-chapter-22-syntax-rules-annex-b.html
@@ -17,11 +16,11 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
     // The United Nations group responsible for EDIFACT see http://www.unece.org/cefact/edifact/welcome.html
     // For a description (auf Deutsch) of MSCONS messages used/implemented by Bundesverbandes der Energie- und Wasserwirtschaft e.V. ("BDEW" https://bdew.de) see http://www.edi-energy.de/files2/MSCONS_MIG_2_2e_Lesefassung_2015_09_15_2015_09_11.pdf
 
-    var component_data_element_separator = ":".codePointAt (0)
-    var data_element_separator = "+".codePointAt (0)
-    var decimal_notification = ".".codePointAt (0)
-    var release_character = "?".codePointAt (0) // ToDo: a space character means the release character is not used
-    var segment_terminator = "'".codePointAt (0)
+    var component_data_element_separator: Int = ":".codePointAt (0)
+    var data_element_separator: Int = "+".codePointAt (0)
+    var decimal_notification: Int = ".".codePointAt (0)
+    var release_character: Int = "?".codePointAt (0) // ToDo: a space character means the release character is not used
+    var segment_terminator: Int = "'".codePointAt (0)
 
     /**
      * Convert a ByteBuffer into a string using UTF-8 encoding.
@@ -93,7 +92,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             val buna = new Array[Char] (9)
             for (i <- 0 until 9)
                 buna(i) = buffer.get.asInstanceOf[Char]
-            var una = new String (buna)
+            val una = new String (buna)
             if (("UNA" == una.substring (0, 3)) && (" " == una.substring (7, 8)))
             {
                 component_data_element_separator = una.substring (3, 4).codePointAt (0)
@@ -150,6 +149,156 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             throw new Exception ("expected UNB segment not found")
     }
 
+    def parseUNH (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e
+        val elements = parseData (seg)
+        if (predicate (elements.head, UNH))
+        {
+            val message_reference = segToString (elements.tail.head)
+            val syntax = parseComponents (elements.tail.tail.head)
+            val `type` = segToString (syntax.head)
+            val version = segToString (syntax.tail.head)
+            val release = segToString (syntax.tail.tail.head)
+            val agency = segToString (syntax.tail.tail.tail.head)
+            val code = segToString (syntax.tail.tail.tail.tail.head)
+            println (s"message reference:: ${message_reference}")
+            println (s"type: ${`type`}")
+            println (s"version: $version")
+            println (s"release: $release")
+            println (s"agency: $agency")
+            println (s"code: $code")
+        }
+        else
+            throw new Exception ("expected UNH segment not found")
+    }
+
+    def parseBGM (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // BGM+7+slevu14572840D+9
+        val elements = parseData (seg)
+        if (predicate (elements.head, BGM))
+        {
+//            010 		C002 	DOCUMENT/MESSAGE NAME 	C 	1
+//            1001 	Document name code 	C 		an..3
+//            1131 	Code list identification code 	C 		an..17
+//            3055 	Code list responsible agency code 	C 		an..3
+//            1000 	Document name 	C 		an..35
+//            020 		C106 	DOCUMENT/MESSAGE IDENTIFICATION 	C 	1
+//            1004 	Document identifier 	C 		an..35
+//            1056 	Version identifier 	C 		an..9
+//            1060 	Revision identifier 	C 		an..6
+//            030 		1225 	Message function code 	C 	1 	an..3
+//            040 		4343 	Response type code 	C 	1 	an..3
+            val name_code = segToString (elements.tail.head)
+            val identification = segToString (elements.tail.tail.head)
+            val agency = segToString (elements.tail.tail.tail.head)
+            println (s"name_code: ${`name_code`}")
+            println (s"identification: $identification")
+            println (s"agency: $agency")
+        }
+        else
+            throw new Exception ("expected BGM segment not found")
+    }
+
+    def parseDTM (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // DTM+137:201912140000:203
+        val elements = parseData (seg)
+        if (predicate (elements.head, DTM))
+        {
+            val syntax = parseComponents (elements.tail.head)
+//            10 		C507 	DATE/TIME/PERIOD 	M 	1
+//            2005 	Date or time or period function code qualifier 	M 		an..3
+//            2380 	Date or time or period text 	C 		an..35
+//            2379 	Date or time or period format code 	C 		an..3
+            val qualifier = segToString (syntax.head)
+            val date_time = segToString (syntax.tail.head)
+            val format = segToString (syntax.tail.tail.head)
+            println (s"qualifier: ${qualifier}")
+            println (s"date_time: $date_time")
+            println (s"format: $format")
+        }
+        else
+            throw new Exception ("expected DTM segment not found")
+    }
+
+    def parseRFF (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // RFF+Z13:13008
+        val elements = parseData (seg)
+        if (predicate (elements.head, RFF))
+        {
+            val syntax = parseComponents (elements.tail.head)
+//            010 		C506 	REFERENCE 	M 	1
+//            1153 	Reference code qualifier 	M 		an..3
+//            1154 	Reference identifier 	C 		an..70
+//            1156 	Document line identifier 	C 		an..6
+//            4000 	Reference version identifier 	C 		an..35
+//            1060 	Revision identifier 	C 		an..6
+            val qualifier = segToString (syntax.head)
+            val identifier = segToString (syntax.tail.head)
+            println (s"qualifier: ${qualifier}")
+            println (s"identifier: $identifier")
+        }
+        else
+            throw new Exception ("expected RFF segment not found")
+    }
+
+    def parseNAD (): Unit =
+    {
+        val seg = parse (buffer, segment_terminator)
+        // NAD+MS+12X-SAK-N------6::293
+        val elements = parseData (seg)
+        if (predicate (elements.head, NAD))
+        {
+            val qualifier = segToString (elements.tail.head)
+            val syntax = parseComponents (elements.tail.tail.head)
+//            010 		3035 	Party function code qualifier 	M 	1 	an..3
+//            020 		C082 	PARTY IDENTIFICATION DETAILS 	C 	1
+//            3039 	Party identifier 	M 		an..35
+//            1131 	Code list identification code 	C 		an..17
+//            3055 	Code list responsible agency code 	C 		an..3
+//            030 		C058 	NAME AND ADDRESS 	C 	1
+//            3124 	Name and address description 	M 		an..35
+//            3124 	Name and address description 	C 		an..35
+//            3124 	Name and address description 	C 		an..35
+//            3124 	Name and address description 	C 		an..35
+//            3124 	Name and address description 	C 		an..35
+//            040 		C080 	PARTY NAME 	C 	1
+//            3036 	Party name 	M 		an..35
+//            3036 	Party name 	C 		an..35
+//            3036 	Party name 	C 		an..35
+//            3036 	Party name 	C 		an..35
+//            3036 	Party name 	C 		an..35
+//            3045 	Party name format code 	C 		an..3
+//            050 		C059 	STREET 	C 	1
+//            3042 	Street and number or post office box identifier 	M 		an..35
+//            3042 	Street and number or post office box identifier 	C 		an..35
+//            3042 	Street and number or post office box identifier 	C 		an..35
+//            3042 	Street and number or post office box identifier 	C 		an..35
+//            060 		3164 	City name 	C 	1 	an..35
+//            070 		C819 	COUNTRY SUB-ENTITY DETAILS 	C 	1
+//            3229 	Country sub-entity name code 	C 		an..9
+//            1131 	Code list identification code 	C 		an..17
+//            3055 	Code list responsible agency code 	C 		an..3
+//            3228 	Country sub-entity name 	C 		an..70
+//            080 		3251 	Postal identification code 	C 	1 	an..17
+//            090 		3207 	Country name code 	C 	1 	an..3
+            val identifier = segToString (syntax.head)
+            val agency = segToString (syntax.tail.tail.head)
+            println (s"qualifier: ${qualifier}")
+            println (s"identifier: $identifier")
+            println (s"agency: $agency")
+        }
+        else
+            throw new Exception ("expected NAD segment not found")
+    }
+
     /**
      * Extract one segment
      */
@@ -160,7 +309,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var start = buf.position
         var size = 0
         var c = 0
-        var intervals = List[Tuple2[Int,Int]] () // start and size of each piece of the segment
+        var intervals = List[(Int,Int)] () // start and size of each piece of the segment
         var ret: ByteBuffer = null
 
         while ((0 < buf.remaining) && !stop)
@@ -201,8 +350,8 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             // copy the data piece by piece to a new array
             val bytes = new Array[Byte] (intervals.map (_._2).sum)
             var offset = 0
-            intervals.map (
-                (item) =>
+            intervals.foreach (
+                item =>
                 {
                     buf.position (item._1)
                     buf.get (bytes, offset, item._2)
@@ -214,7 +363,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             ret = ByteBuffer.wrap (bytes)
         }
 
-        return (ret)
+        ret
     }
 
     // Check for summary section
@@ -250,7 +399,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                     ret = true
         }
 
-        return (ret)
+        ret
     }
 
     def predicate (seg: ByteBuffer, pattern: Array[Byte]): Boolean =
@@ -268,7 +417,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                 if (b2 == pattern(2))
                     ret = true
 
-        return (ret);
+        ret
     }
 
     def isMessageStart (seg: ByteBuffer): Boolean = { predicate (seg, UNS) }
@@ -285,7 +434,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         while (0 < seg.remaining)
             ret = ret :+ parse (seg, terminator)
 
-        return (ret)
+        ret
     }
 
     def parseData (seg: ByteBuffer): List[ByteBuffer] = parseAll (seg, data_element_separator)
@@ -302,7 +451,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val elements = parseData (seg)
         val parts = parseComponents (elements.tail.head)
 
-        return (segToString (parts.head))
+        segToString (parts.head)
     }
 
     def ParseLocation (seg: ByteBuffer): String =
@@ -311,7 +460,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val elements = parseData (seg)
         val parts = parseComponents (elements.tail.tail.head)
 
-        return (segToString (parts.tail.tail.tail.head))
+        segToString (parts.head)
     }
 
     def ParseDateTimeOrPeriod (seg: ByteBuffer): String =
@@ -329,7 +478,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val fmt = segToInteger (parts.tail.tail.head)
         qualifier match
         {
-            case 163 =>
+            case 163 | 164 => // Processing start date/time or Processing end date/time
                 if (303 != fmt)
                     throw new Exception ("unrecognized date format")
                 val matcher = date303.matcher (value)
@@ -349,7 +498,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                 ret = "0"
         }
 
-        return (ret)
+        ret
     }
 
     def ParseCharacteristic (seg: ByteBuffer): String =
@@ -362,7 +511,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             ""
         else
         {
-            val parts = parseComponents (elements.tail.tail.tail.head);
+            val parts = parseComponents (elements.tail.tail.tail.head)
             val identification = segToString (parts.head)
             val agency = segToString (parts.tail.tail.head)
             "{identification: " + identification + ", agency: " + agency + "}"
@@ -370,15 +519,15 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val relevance = segToString (elements.tail.tail.tail.head)
         val ret = "{property_class: " + cls + ", details: " + details + ", characteristic: " + characteristic + ", relevance: " + relevance + "}"
 
-        return (ret);
+        ret
     }
 
     def ParseLineItem (seg: ByteBuffer): Int =
     {
         // LIN+1
-        val elements = parseData (seg);
+        val elements = parseData (seg)
 
-        return (segToInteger (elements.tail.head))
+        segToInteger (elements.tail.head)
     }
 
     /**
@@ -450,7 +599,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             "vorwert: " + pieces(5).toInt +
         "}"
 
-        return (ret);
+        ret
     }
 
     def ParseQuantity (seg: ByteBuffer): Double =
@@ -459,7 +608,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         val elements = parseData (seg)
         val parts = parseComponents (elements.tail.head)
 
-        return (segToDouble (parts.tail.head))
+        segToDouble (parts.tail.head)
     }
 
     case class Record (
@@ -469,7 +618,7 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
         var date: String = "",
         var interval: String = "",
         var characteristic: String = "",
-        var characteristic_date: Array[String] = null,
+        var characteristic_date: List[String] = null,
         var item: Int = 0,
         var product: String = ""
         )
@@ -537,8 +686,11 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
             {
                 done = true
                 // process any partially complete record
-//                if ((null != record) && (typeof (callback) == "function"))
-//                    callback (record)
+                if (null != record)
+                {
+                    println (record)
+                    record = null
+                }
             }
             else
             {
@@ -553,13 +705,13 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                             state = 190
 
                         case 190 => // mandatory LOC
-                            record = Record (name, ParseLocation (seg), List[Double] ())
+                            record = Record (name = name, location = ParseLocation (seg), quantities = List[Double] (), characteristic_date = List[String] ())
                             state = 200
 
                         case 200 => // optional DTM (up to 9)
                             if (isDateTimeOrPeriod (seg))
                             {
-                                var v = ParseDateTimeOrPeriod (seg)
+                                val v = ParseDateTimeOrPeriod (seg)
 //                                if (typeof (v) == "object")
                                     record.date = v
 //                                else
@@ -623,14 +775,12 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
                         case 350 => // mandatory quantity
                             if (isQuantity (seg))
                                 record.quantities = record.quantities :+ ParseQuantity (seg)
+                            else if (isDateTimeOrPeriod (seg))
+                                record.characteristic_date = record.characteristic_date :+ ParseDateTimeOrPeriod (seg)
                             else
                             {
-                                // TODO: handle DTM
-
-//                                // process the complete record
-//                                if (typeof (callback) == "function")
-//                                    callback (record)
-
+                                // process the complete record
+                                println (record)
                                 record = null
 
                                 state = 190
@@ -652,6 +802,10 @@ class MSCONS (val buffer: ByteBuffer) extends Serializable
 object MSCONS
 {
     final val UNB = "UNB".getBytes ("UTF-8")
+    final val UNH = "UNH".getBytes ("UTF-8")
+    final val BGM = "BGM".getBytes ("UTF-8")
+    final val RFF = "RFF".getBytes ("UTF-8")
+    final val NAD = "NAD".getBytes ("UTF-8")
     final val UNT = "UNT".getBytes ("UTF-8")
     final val UNZ = "UNZ".getBytes ("UTF-8")
     final val CNT = "CNT".getBytes ("UTF-8")
@@ -683,19 +837,28 @@ object MSCONS
      */
     def main (args: Array[String])
     {
-        if (args.size > 0)
+        if (args.length > 0)
         {
             val before = System.nanoTime
 
-            val path = FileSystems.getDefault ().getPath (args (0));
-            val file = FileChannel.open (path, StandardOpenOption.READ)
-            val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0l, file.size ())
-            file.close ()
+            for (index <- args.indices)
+            {
+                val path = FileSystems.getDefault.getPath (args (index))
+                val file = FileChannel.open (path, StandardOpenOption.READ)
+                val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0L, file.size ())
+                file.close ()
 
-            val mscons = new MSCONS (buffer)
-            mscons.parseUNA ()
-            mscons.parseUNB ()
-            mscons.parseReadings ()
+                val mscons = new MSCONS (buffer)
+                mscons.parseUNA ()
+                mscons.parseUNB ()
+                mscons.parseUNH ()
+                mscons.parseBGM ()
+                mscons.parseDTM ()
+                mscons.parseRFF ()
+                mscons.parseNAD ()
+                mscons.parseNAD ()
+                mscons.parseReadings ()
+            }
 
             val after = System.nanoTime
             println ("reading %g seconds".format ((after - before) / 1e9))
