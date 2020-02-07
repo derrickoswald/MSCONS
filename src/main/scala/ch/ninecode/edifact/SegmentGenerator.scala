@@ -97,8 +97,8 @@ object SegmentGenerator
 //    transmitted as consecutive characters without hyphen.), Code(600,CC,Century.), Code(601,YY,Calendar year: Y = Year.), Code(602,CCYY,Calendar year including century: C = Century; Y = Year.), Code(603,YYS,Semester in a calendar year: Y = Year; S = Semester.), Code(604,CCYYS,Semester in a calendar year: C = Century; Y = Year; S =
 //    Semester.), Code(608,CCYYQ,Quarter in a calendar year: C = Century; Y = Year; Q =
 //    Quarter.), Code(609,YYMM,Month within a calendar year: Y = Year; M = Month.), Code(610,CCYYMM,Month within a calendar year: CC = Century; Y = Year; M
-//    = Month.), Code(613,YYMMA,To specifiy a ten-day period within a month of a year (A
-//    = ten day period).), Code(614,CCYYMMA,To specifiy a ten-day period within a month of a year,
+//    = Month.), Code(613,YYMMA,To specify a ten-day period within a month of a year (A
+//    = ten day period).), Code(614,CCYYMMA,To specify a ten-day period within a month of a year,
 //    including century  (A = ten day period).), Code(615,YYWW,Week within a calendar year: Y = Year; W = Week 1st week
 //    of January = week 01.), Code(616,CCYYWW,Week within a calendar year: CC = Century; Y = Year; W =
 //    Week (1st week of January = week 01).), Code(701,YY-YY,A period of time specified by giving the start year
@@ -199,7 +199,7 @@ object SegmentGenerator
         s.append (
             """package ch.ninecode.edifact
               |
-              |import scala.util.parsing.combinator.Parsers
+              |import scala.util.parsing.combinator._
               |
               |class ServiceSegmentParser (una: UNA) extends Parsers
               |{
@@ -208,45 +208,41 @@ object SegmentGenerator
               |""".stripMargin)
         for (segment <- segments)
         {
+            val name = segment.name
+            val description = segment.description.replace ("\n", "\n     * ")
+            val tag = segment.tag
             s.append (
-                """    /**
-                  |     * %s
+               s"""    /**
+                  |     * $name
                   |     *
-                  |     * %s
+                  |     * $description
                   |     */
-                  |""".stripMargin.format (segment.name, segment.description.replace ("\n", "\n     * ")))
-            s.append (
-                """    def %s: Parser[String]
+                  |
+                  |    def $tag: Parser[String] =
                   |    {
-                  |""".stripMargin.format (segment.tag))
+                  |""".stripMargin)
             for (field <- segment.fields)
             {
                 for (subfield <- field.subfields)
-                {
                     s.append (
-                        """        /**
-                          |         * %s
+                       s"""        /**
+                          |         * ${subfield.name}
                           |         */
-                          |        def %s: Parser[String] """.stripMargin.format (subfield.name, "_" + subfield.tag))
-                    s.append (
-                        """
+                          |        def _${subfield.tag}: Parser[String] = _
                           |
                           |""".stripMargin)
-                }
+                val subfields = field.subfields.map (field => s"_${field.tag}${field.qualifier}").mkString (" ~ ")
                 s.append (
-                    """        /**
-                      |         * %s
+                   s"""        /**
+                      |         * ${field.name}
                       |         */
-                      |        def %s: Parser[String] """.stripMargin.format (field.name, "_" + field.tag))
-                s.append (field.subfields.map (field => "_" + field.tag + (if (field.status == "C") ".?" else "")).mkString (" ~ "))
-                s.append ("""
+                      |        def _${field.tag}: Parser[String] = ${if ("" != subfields) subfields else "_"}
                       |
                       |""".stripMargin)
             }
-            s.append ("""        """)
-            s.append (segment.fields.map (field => "_" + field.tag + (if (field.status == "C") ".?" else "")).mkString (" ~ "))
+            val fields = segment.fields.map (field => s"_${field.tag}${field.qualifier}").mkString (" ~ ")
             s.append (
-                """
+               s"""        $fields
                   |    }
                   |
                   |""".stripMargin)
@@ -256,5 +252,4 @@ object SegmentGenerator
               |""".stripMargin)
         Files.write (Paths.get ("target/ServiceSegmentParser.scala"), s.toString.getBytes (StandardCharsets.UTF_8))
     }
-
 }

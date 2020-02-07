@@ -12,7 +12,7 @@ class ParseCodeList extends RegexParsers
 {
     override val skipWhitespace = false
     def header: Parser[String]    = """[^-]*""".r ^^ { _.toString }
-    val code = new Parser[Code]
+    val code: Parser[Code] = new Parser[Code]
     {
         val pattern: Pattern = Pattern.compile ("""\s*(\S*)([\s\S]*?)(?: {11}?)([\s\S]*?)(?:\n\n|\z)""")
         def apply (in: Input): ParseResult[Code] =
@@ -38,9 +38,10 @@ class ParseCodeList extends RegexParsers
                 Failure ("Code not found", in)
         }
     }
-    val codelist = new Parser[CodeList]
+
+    val codelist: Parser[CodeList] = new Parser[CodeList]
     {
-        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)(?:\n\n\n|\z)""")
+        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[+*#|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)(?:\n\n\n|\z)""")
         def apply (in: Input): ParseResult[CodeList] =
         {
             val source = in.source

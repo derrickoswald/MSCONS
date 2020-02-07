@@ -25,7 +25,7 @@ class ParseServiceSegmentList extends RegexParsers
     //      0104   Erroneous component data element
     //             position                                   C     n..3
     //      0136   Erroneous data element occurrence          C     n..6
-    val content = new Parser[List[Field]]
+    val content: Parser[List[Field]] = new Parser[List[Field]]
     {
         def cut (string: String): Field =
         {
@@ -80,9 +80,9 @@ class ParseServiceSegmentList extends RegexParsers
         }
     }
 
-    val servicesegment = new Parser[ServiceSegment]
+    val servicesegment: Parser[ServiceSegment] = new Parser[ServiceSegment]
     {
-        val pattern: Pattern = Pattern.compile ("""-{78}\n\n[\+\*\#\|X]?\s*(\S*)\s*(.*)\n\n\s*Function: ([\S\s]*?)\n\nPos   TAG   Name                                        S R   Repr.    Notes\n\n([\S\s]*?)(\n\n\n[\S\s]*?)??\n\n(?=-)""")
+        val pattern: Pattern = Pattern.compile ("""-{78}\n\n[+*#|X]?\s*(\S*)\s*(.*)\n\n\s*Function: ([\S\s]*?)\n\nPos {3}TAG {3}Name {40}S R {3}Repr. {4}Notes\n\n([\S\s]*?)(\n\n\n[\S\s]*?)??\n\n(?=-)""")
         def apply (in: Input): ParseResult[ServiceSegment] =
         {
             val source = in.source

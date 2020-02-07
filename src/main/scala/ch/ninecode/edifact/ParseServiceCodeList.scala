@@ -14,9 +14,9 @@ class ParseServiceCodeList extends RegexParsers
     override val skipWhitespace = false
     def removeLeadingSpaces (s: String): String = s.split ("\n").map (_.trim).mkString ("\n")
     def header: Parser[String]    = """[^-]*""".r ^^ { _.toString }
-    val code = new Parser[Code]
+    val code: Parser[Code] = new Parser[Code]
     {
-        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?:             [ \t\x0B\f\S]*(?:\n|\z))*)""")
+        val pattern: Pattern = Pattern.compile ("""\s*(\S*)\s*(.*)\n((?: {13}[ \t\x0B\f\S]*(?:\n|\z))*)""")
         def apply (in: Input): ParseResult[Code] =
         {
             val source = in.source
@@ -39,9 +39,9 @@ class ParseServiceCodeList extends RegexParsers
                 Failure ("Code not found", in)
         }
     }
-    val servicecode = new Parser[CodeList]
+    val servicecode: Parser[CodeList] = new Parser[CodeList]
     {
-        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[\+\*\#\|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)\n\n""")
+        val pattern: Pattern = Pattern.compile ("""-{70}\n\n[+*#|X]?\s*(\d*)\s*(.*)\n\n\s*?Desc: ([\S\s]*?)\n\n\s*Repr: (\S*)\n\n([\S\s]*?)\n\n""")
         def apply (in: Input): ParseResult[CodeList] =
         {
             val source = in.source

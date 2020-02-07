@@ -136,7 +136,7 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>MSCONSSuite.txt</filereports>
-                    <suites>ch.ninecode.mscons.MSCONSSuite</suites>
+                    <suites>ch.ninecode.mscons.MSCONSSuite,ch.ninecode.edifact.EDIFACTSuite</suites>
                 </configuration>
                 <executions>
                     <execution>

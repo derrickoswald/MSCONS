@@ -13,7 +13,7 @@ class SegmentParser extends Parsers
     def parse[T] (p: Parser[T], in: Reader[Char]): ParseResult[T] =
         p(in)
 
-    val unaparser = new Parser[UNA]
+    val unaparser: Parser[UNA] = new Parser[UNA]
     {
         def apply (in: Input): ParseResult[UNA] =
         {
@@ -37,7 +37,7 @@ class SegmentParser extends Parsers
         }
     }
 
-    def segment (una: UNA) = new Parser[Segment]
+    def segment (una: UNA): Parser[Segment] = new Parser[Segment]
     {
         val term: Int = una.segment_terminator
         val release: Int = una.release_character

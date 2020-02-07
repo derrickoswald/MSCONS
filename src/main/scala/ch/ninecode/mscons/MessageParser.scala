@@ -9,8 +9,8 @@ import scala.util.parsing.combinator._
 
 class MessageParser (una: UNA) extends RegexParsers
 {
-    def word: Parser[String]   = """.*""".r       ^^ { _.toString }
-    def message: Parser[String] = word ^^ { case unb => unb }
+    def word: Parser[String] = """.*""".r       ^^ { _.toString }
+    def message: Parser[String] = word ^^ (unb => unb)
     def parse (in: Input): ParseResult[String] =
         message (in)
 }
@@ -38,7 +38,13 @@ object MessageParser
         {
             case up.Success (una: UNA, rest) =>
                 val message = new MessageParser (una)
-                log.info (message.parse (rest).toString)
+                val f = message.parse (rest)
+                if (f.successful)
+                {
+                    log.info (f.get)
+                }
+                else
+                    log.error (f.toString)
             case up.Failure (msg, _) => log.error ("parse failure: " + msg.substring (0, 200))
             case up.Error (msg, _) => log.error ("parse error: " + msg.substring (0, 200))
         }

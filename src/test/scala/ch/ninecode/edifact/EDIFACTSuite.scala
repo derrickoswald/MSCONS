@@ -189,7 +189,7 @@ class EDIFACTSuite extends FunSuite
         val reader: Reader[Char] = new ByteBufferReader (buffer)
         parser.parse (parser.message, reader) match
         {
-            case parser.Success (matched: List[Segment], _) => fail ("shouldn't succeed")
+            case parser.Success (_: List[Segment], _) => fail ("shouldn't succeed")
             case parser.Failure (msg, _) => fail (msg)
             case parser.Error (msg, _) => assertResult ("segment terminator not found", "EOF not handled")(msg)
         }
@@ -199,10 +199,10 @@ class EDIFACTSuite extends FunSuite
     {
         val before = System.nanoTime
 
-        val path = FileSystems.getDefault.getPath ("data/MSCONS_LG_12X-0000000858-F_12X-0000000858-F_20140314_1407300597853.txt");
+        val path = FileSystems.getDefault.getPath ("data/MSCONS_LG_12X-0000000858-F_12X-0000000858-F_20140314_1407300597853.txt")
         val file = FileChannel.open (path, StandardOpenOption.READ)
         val size = file.size ()
-        val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0l, size)
+        val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0L, size)
         file.close ()
 
         val parser = new SegmentParser

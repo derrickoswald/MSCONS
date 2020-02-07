@@ -14,7 +14,7 @@ class UNAParser extends RegexParsers
     //     reserved, must be a space
     //     segment terminator (')
     val pattern: Pattern = Pattern.compile ("""UNA(.)(.)(.)(.)(.)(.)""")
-    val una = new Parser[UNA]
+    val una: Parser[UNA] = new Parser[UNA]
     {
         def apply (in: Input): ParseResult[UNA] =
         {

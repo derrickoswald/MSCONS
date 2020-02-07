@@ -11,4 +11,6 @@ case class Field
     notes: String,
     subfields: List[Field]
 )
-
+{
+    lazy val qualifier: String = if (status == "C") ".?" else ""
+}
