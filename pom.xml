@@ -26,11 +26,12 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <version.dependency.junit>4.11</version.dependency.junit>
         <version.dependency.scala>2.11</version.dependency.scala>
-        <version.dependency.scalalibrary>2.11.8</version.dependency.scalalibrary>
+        <version.dependency.scalalibrary>2.11.12</version.dependency.scalalibrary>
+        <version.dependency.parser-combinators>1.1.2</version.dependency.parser-combinators>
+        <version.dependency.slf4j>1.7.30</version.dependency.slf4j>
         <version.dependency.scalatest>3.0.1</version.dependency.scalatest>
-        <version.dependency.scalamavenplugin>4.1.0</version.dependency.scalamavenplugin>
+        <version.dependency.scalamavenplugin>4.3.1</version.dependency.scalamavenplugin>
         <version.dependency.scopt>3.5.0</version.dependency.scopt>
-        <version.dependency.spark>2.0.2</version.dependency.spark>
     </properties>
 
     <dependencies>
@@ -39,6 +40,30 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${version.dependency.scalalibrary}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang.modules</groupId>
+            <artifactId>scala-parser-combinators_${version.dependency.scala}</artifactId>
+            <version>${version.dependency.parser-combinators}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.dependency.slf4j}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${version.dependency.slf4j}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.scopt</groupId>
+            <artifactId>scopt_2.11</artifactId>
+            <version>${version.dependency.scopt}</version>
         </dependency>
 
         <dependency>
@@ -55,26 +80,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${version.dependency.scala}</artifactId>
-            <scope>provided</scope>
-            <version>${version.dependency.spark}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_${version.dependency.scala}</artifactId>
-            <scope>provided</scope>
-            <version>${version.dependency.spark}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.scopt</groupId>
-            <artifactId>scopt_2.11</artifactId>
-            <version>${version.dependency.scopt}</version>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -88,13 +93,6 @@
         </resources>
         <plugins>
             <plugin>
-                <!-- NOTE: in order to get maven and scala to work together in Eclipse
-                     I needed to install the maven-scala plugin
-                     see:
-                     http://alchim31.free.fr/m2e-scala/update-site/
-                     https://github.com/davidB/scala-maven-plugin
-                     http://davidb.github.com/scala-maven-plugin
-                     https://mvnrepository.com/artifact/net.alchim31.maven/scala-maven-plugin -->
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>${version.dependency.scalamavenplugin}</version>
@@ -109,11 +107,7 @@
                             <goal>testCompile</goal>
                         </goals>
                         <configuration>
-                            <args>
-                                <arg>-deprecation</arg>
-                                <arg>-dependencyfile</arg>
-                                <arg>${project.build.directory}/.scala_dependencies</arg>
-                            </args>
+                            <scalaVersion>${version.dependency.scalalibrary}</scalaVersion>
                         </configuration>
                     </execution>
                 </executions>
@@ -159,7 +153,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>ch.ninecode.mscons.MessageParser</mainClass>
+                            <mainClass>ch.ninecode.mscons.MSCONSParser</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

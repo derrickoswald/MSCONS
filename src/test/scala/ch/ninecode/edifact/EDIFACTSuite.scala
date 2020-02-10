@@ -2,13 +2,15 @@ package ch.ninecode.edifact
 
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
-import java.nio.file.{FileSystems, StandardOpenOption}
+import java.nio.file.FileSystems
+import java.nio.file.StandardOpenOption
 
 import scala.io.Source
 import org.scalatest.FunSuite
 
-import scala.collection.immutable.PagedSeq
-import scala.util.parsing.input.{PagedSeqReader, Reader}
+import scala.util.parsing.input.PagedSeq
+import scala.util.parsing.input.PagedSeqReader
+import scala.util.parsing.input.Reader
 
 class EDIFACTSuite extends FunSuite
 {
@@ -158,41 +160,23 @@ class EDIFACTSuite extends FunSuite
 
     test ("ParseSegmentwithUNA")
     {
-        val buffer = ByteBuffer.wrap ("UNA:+.? 'UNB'".getBytes)
-        val parser = new SegmentParser
-        val reader: Reader[Char] = new ByteBufferReader (buffer)
-        parser.parse (parser.message, reader) match
-        {
-            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
-            case parser.Failure (msg, _) => fail (msg)
-            case parser.Error (msg, _) => fail (msg)
-        }
+        val scanner = SegmentScanner ("UNA:+.? 'UNB'")
+        val unb = scanner.first
+        assertResult ("UNB", "segment incorrect")(unb)
     }
 
     test ("ParseSegmentwithoutUNA")
     {
-        val buffer = ByteBuffer.wrap ("UNB'".getBytes)
-        val parser = new SegmentParser
-        val reader: Reader[Char] = new ByteBufferReader (buffer)
-        parser.parse (parser.message, reader) match
-        {
-            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
-            case parser.Failure (msg, _) => fail (msg)
-            case parser.Error (msg, _) => fail (msg)
-        }
+        val scanner = SegmentScanner ("UNB'")
+        val unb = scanner.first
+        assertResult ("UNB", "segment incorrect")(unb)
     }
 
     test ("ParseSegmentwithoutSegmentTerminator")
     {
-        val buffer = ByteBuffer.wrap ("UNB".getBytes)
-        val parser = new SegmentParser
-        val reader: Reader[Char] = new ByteBufferReader (buffer)
-        parser.parse (parser.message, reader) match
-        {
-            case parser.Success (_: List[Segment], _) => fail ("shouldn't succeed")
-            case parser.Failure (msg, _) => fail (msg)
-            case parser.Error (msg, _) => assertResult ("segment terminator not found", "EOF not handled")(msg)
-        }
+        val scanner = SegmentScanner ("UNB")
+        val unb = scanner.first
+        assertResult ("UNB", "segment incorrect")(unb)
     }
 
     test ("ParseSample")
@@ -205,14 +189,19 @@ class EDIFACTSuite extends FunSuite
         val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0L, size)
         file.close ()
 
-        val parser = new SegmentParser
-        val reader: Reader[Char] = new ByteBufferReader (buffer)
-        parser.parse (parser.message, reader) match
+        val scanner = SegmentScanner (buffer)
+        val message = SegmentParser (scanner.una)
+        val segments = message.segment.*
+        segments.apply (scanner) match
         {
-            case parser.Success (matched: List[Segment], _) => assertResult ("UNB", "name incorrect") (matched.head.name)
-            case parser.Failure (msg, _) => fail (msg)
-            case parser.Error (msg, _) => fail (msg)
+            case message.Success (result: List[Segment], _) =>
+                assertResult ("UNB", "name incorrect") (result.head.name)
+            case message.Failure (msg, _) =>
+                fail (msg)
+            case message.Error (msg, _) =>
+                fail (msg)
         }
+
         val after = System.nanoTime
         info ("reading %d bytes took %g seconds".format (size, (after - before) / 1e9))
     }
