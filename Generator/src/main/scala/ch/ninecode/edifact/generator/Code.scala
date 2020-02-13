@@ -1,4 +1,4 @@
-package ch.ninecode.edifact
+package ch.ninecode.edifact.generator
 
 case class Code
 (
@@ -6,4 +6,3 @@ case class Code
     title: String,
     description: String
 )
-

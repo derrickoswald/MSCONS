@@ -1,4 +1,4 @@
-package ch.ninecode.edifact
+package ch.ninecode.edifact.generator
 
 import java.util.regex.Pattern
 

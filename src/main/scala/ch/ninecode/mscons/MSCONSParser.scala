@@ -5,11 +5,14 @@ import java.nio.file.FileSystems
 import java.nio.file.StandardOpenOption
 import java.util.Properties
 
-import ch.ninecode.edifact.Segment
-
 import scala.util.parsing.combinator._
+
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
+import ch.ninecode.edifact.Field
+import ch.ninecode.edifact.FieldParser
+import ch.ninecode.edifact.FieldScanner
+import ch.ninecode.edifact.Segment
 import ch.ninecode.edifact.SegmentParser
 import ch.ninecode.edifact.SegmentScanner
 
@@ -54,7 +57,20 @@ object MSCONSParser
                             segments.apply (scanner) match
                             {
                                 case message.Success (result: List[Segment], _) =>
-                                    log.info (result.head.toString) // .map (x => x.map (y => println (y)))
+                                    //result.foreach ((x: Segment) => println (x.name))
+                                    val sc2 = FieldScanner (result.head, scanner.una)
+                                    val me2 = FieldParser ()
+                                    val fields = me2.field.*
+                                    fields.apply (sc2) match
+                                    {
+                                        case me2.Success (re2: List[Field], _) =>
+                                            log.info (s"${result.head.toString} => ${re2.mkString (",")})")
+                                        // .map (x => x.map (y => println (y)))
+                                        case me2.Failure (msg, _) =>
+                                            log.error (s"parse failure: $msg")
+                                        case me2.Error (msg, _) =>
+                                            log.error (s"parse error: $msg")
+                                    }
                                 case message.Failure (msg, _) =>
                                     log.error (s"parse failure: $msg")
                                 case message.Error (msg, _) =>

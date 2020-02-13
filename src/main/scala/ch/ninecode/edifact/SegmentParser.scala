@@ -16,25 +16,19 @@ case class SegmentParser (una: UNA) extends Parsers
             else
             {
                 val string = in.first
-                if (string.length >= 3)
-                {
-                    val sep = string.indexOf (una.data_element_separator)
-                    if (sep > 0)
+                val sep = string.indexOf (una.data_element_separator)
+                val name = if (sep > 0)
+                    string.substring (0, sep)
+                else
+                    string // see for example UIT INTERACTIVE MESSAGE TRAILER that has no mandatory fields
+                if ((name.length == 3) && name.forall (_.isUpper))
                     {
-                        val name = string.substring (0, sep)
-                        if (name.forall (_.isUpper))
-                        {
-                            val seg = Segment (name, string.substring (sep + 1))
-                            Success (seg, in.rest)
-                        }
-                        else
-                            Failure ("name is not all upper case", in.rest)
+                        val body = string.substring (sep + 1)
+                        val seg = Segment (name, body)
+                        Success (seg, in.rest)
                     }
                     else
-                        Error ("data element separator not found", in.rest)
-                }
-                else
-                    Error ("segment name not found", in.rest)
+                        Error (s"segment name not found (${name.substring (0, Math.min (20, name.length))})", in.rest)
             }
         }
     }

@@ -1,11 +1,12 @@
-package ch.ninecode.edifact
+package ch.ninecode.edifact.generator
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
+import java.nio.file.Paths
 
 import scala.io.Source
 
-object SegmentGenerator
+class SegmentGenerator
 {
 //    ServiceSegment(UNB,INTERCHANGE HEADER,To identify an interchange.,List(Field(10,S001,SYNTAX IDENTIFIER,M,1,,1,List(Field(0,0001,Syntax identifier,M,,a4,,List()), Field(0,0002,Syntax version number,M,,an1,,List()), Field(0,0080,Service code list directory version number,C,,an..6,,List()), Field(0,0133,Character encoding, coded,C,,an..3,,List()))), Field(20,S002,INTERCHANGE SENDER,M,1,,2,List(Field(0,0004,Interchange sender identification,M,,an..35,,List()), Field(0,0007,Identification code qualifier,C,,an..4,,List()), Field(0,0008,Interchange sender internal identification,C,,an..35,,List()), Field(0,0042,Interchange sender internal sub-identification,C,,an..35,,List()))), Field(30,S003,INTERCHANGE RECIPIENT,M,1,,2,List(Field(0,0010,Interchange recipient identification,M,,an..35,,List()), Field(0,0007,Identification code qualifier,C,,an..4,,List()), Field(0,0014,Interchange recipient internal identification,C,,an..35,,List()), Field(0,0046,Interchange recipient internal sub-identification,C,,an..35,,List()))), Field(40,S004,DATE AND TIME OF PREPARATION,M,1,,,List(Field(0,0017,Date,M,,n8,,List()), Field(0,0019,Time,M,,n4,,List()))), Field(50,0020,INTERCHANGE CONTROL REFERENCE,M,1,an..14,2,List()), Field(60,S005,RECIPIENT REFERENCE/PASSWORD DETAILS,C,1,,,List(Field(0,0022,Recipient reference/password,M,,an..14,,List()), Field(0,0025,Recipient reference/password qualifier,C,,an2,,List()))), Field(70,0026,APPLICATION REFERENCE,C,1,an..14,,List()), Field(80,0029,PROCESSING PRIORITY CODE,C,1,a1,,List()), Field(90,0031,ACKNOWLEDGEMENT REQUEST,C,1,n1,,List()), Field(100,0032,INTERCHANGE AGREEMENT IDENTIFIER,C,1,an..35,,List()), Field(110,0035,TEST INDICATOR,C,1,n1,,List())),
 //
@@ -149,7 +150,7 @@ object SegmentGenerator
 
     lazy val segments: List[ServiceSegment] =
     {
-        val source = Source.fromFile ("ref/Ss40000.txt", "UTF-8")
+        val source = Source.fromFile ("../ref/Ss40000.txt", "UTF-8")
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseServiceSegmentList ()
@@ -162,7 +163,7 @@ object SegmentGenerator
 
     lazy val codes: List[CodeList] =
     {
-        val source = Source.fromFile ("ref/sl40210.txt", "UTF-8")
+        val source = Source.fromFile ("../ref/sl40210.txt", "UTF-8")
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseServiceCodeList ()
@@ -175,7 +176,7 @@ object SegmentGenerator
 
     lazy val codelist: List[CodeList] =
     {
-        val source = Source.fromFile ("ref/d17a/uncl/UNCL.17A", "UTF-8")
+        val source = Source.fromFile ("../ref/d17a/uncl/UNCL.17A", "UTF-8")
         val text = source.getLines.mkString ("\n")
         source.close
         val parser = new ParseCodeList ()
@@ -187,14 +188,12 @@ object SegmentGenerator
     }
 
     /**
-     * Main program for testing purposes.
+     * Generate the service segment parser.
+     *
+     * @param filename output file name
      */
-    def main (args: Array[String])
+    def generate (filename: String): Unit =
     {
-//        println (segments.filter (_.tag == "UNB").head)
-//        println (codes.filter (_.number == 1).head)
-//        println (codelist.filter (_.number == 2379).head)
-
         val s = new StringBuilder ()
         s.append (
             """package ch.ninecode.edifact
@@ -203,7 +202,7 @@ object SegmentGenerator
               |
               |class ServiceSegmentParser (una: UNA) extends Parsers
               |{
-              |    type Elem = Char
+              |    type Elem = Segment
               |
               |""".stripMargin)
         for (segment <- segments)
@@ -217,8 +216,7 @@ object SegmentGenerator
                   |     *
                   |     * $description
                   |     */
-                  |
-                  |    def $tag: Parser[String] =
+                  |    def $tag: Parser[Field] =
                   |    {
                   |""".stripMargin)
             for (field <- segment.fields)
@@ -228,19 +226,19 @@ object SegmentGenerator
                        s"""        /**
                           |         * ${subfield.name}
                           |         */
-                          |        def _${subfield.tag}: Parser[String] = _
+                          |        def ${tag}_${subfield.tag}: Parser[Field] = ???
                           |
                           |""".stripMargin)
-                val subfields = field.subfields.map (field => s"_${field.tag}${field.qualifier}").mkString (" ~ ")
+                val subfields = field.subfields.map (field => s"${tag}_${field.tag}${field.qualifier}").mkString (" ~ ")
                 s.append (
                    s"""        /**
                       |         * ${field.name}
                       |         */
-                      |        def _${field.tag}: Parser[String] = ${if ("" != subfields) subfields else "_"}
+                      |        def ${tag}_${field.tag}: Parser[Field] = ${if ("" != subfields) subfields else "???"}
                       |
                       |""".stripMargin)
             }
-            val fields = segment.fields.map (field => s"_${field.tag}${field.qualifier}").mkString (" ~ ")
+            val fields = segment.fields.map (field => s"${tag}_${field.tag}${field.qualifier}").mkString (" ~ ")
             s.append (
                s"""        $fields
                   |    }
@@ -250,6 +248,6 @@ object SegmentGenerator
         s.append (
             """}
               |""".stripMargin)
-        Files.write (Paths.get ("target/ServiceSegmentParser.scala"), s.toString.getBytes (StandardCharsets.UTF_8))
+        Files.write (Paths.get (filename), s.toString.getBytes (StandardCharsets.UTF_8))
     }
 }

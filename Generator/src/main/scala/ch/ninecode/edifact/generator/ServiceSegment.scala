@@ -1,4 +1,4 @@
-package ch.ninecode.edifact
+package ch.ninecode.edifact.generator
 
 case class ServiceSegment
 (
@@ -8,5 +8,3 @@ case class ServiceSegment
     fields: List[Field],
     notes: String
 )
-
-

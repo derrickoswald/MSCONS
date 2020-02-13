@@ -74,7 +74,7 @@ case class SegmentScanner (buffer: ByteBuffer, una: UNA) extends Reader[String]
     /**
      * Returns the first element of the reader.
      */
-    val first: String = scan
+    lazy val first: String = scan
 
     /** Returns an abstract reader consisting of all elements except the first
      *
