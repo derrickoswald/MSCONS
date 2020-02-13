@@ -5,18 +5,14 @@ import java.nio.file.FileSystems
 import java.nio.file.StandardOpenOption
 import java.util.Properties
 
-import scala.util.parsing.combinator._
-
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
-import ch.ninecode.edifact.Field
-import ch.ninecode.edifact.FieldParser
-import ch.ninecode.edifact.FieldScanner
+
+import ch.ninecode.edifact.ServiceSegmentParser
 import ch.ninecode.edifact.Segment
+import ch.ninecode.edifact.SegmentListParser
 import ch.ninecode.edifact.SegmentParser
 import ch.ninecode.edifact.SegmentScanner
-
-import scala.util.parsing.input.Reader
 
 object MSCONSParser
 {
@@ -57,18 +53,24 @@ object MSCONSParser
                             segments.apply (scanner) match
                             {
                                 case message.Success (result: List[Segment], _) =>
-                                    //result.foreach ((x: Segment) => println (x.name))
-                                    val sc2 = FieldScanner (result.head, scanner.una)
-                                    val me2 = FieldParser ()
-                                    val fields = me2.field.*
-                                    fields.apply (sc2) match
+                                    // result.foreach (segment => println (segment))
+                                    val x = ServiceSegmentParser.read (result)
+                                    x match
                                     {
-                                        case me2.Success (re2: List[Field], _) =>
-                                            log.info (s"${result.head.toString} => ${re2.mkString (",")})")
-                                        // .map (x => x.map (y => println (y)))
-                                        case me2.Failure (msg, _) =>
+                                        case ServiceSegmentParser.Success (r, _) =>
+                                            if (   (r.unh.Type == "MSCONS")
+                                                && (r.unh.Version == "D"))
+                                            {
+                                                r.unh.Release match
+                                                {
+                                                    case "04B" => println (r)
+                                                    case _ => log.error (s"${r.unh.Type} version ${r.unh.Version} release ${r.unh.Release} is not supported")
+                                                }
+                                            }
+
+                                        case ServiceSegmentParser.Failure (msg, _) =>
                                             log.error (s"parse failure: $msg")
-                                        case me2.Error (msg, _) =>
+                                        case ServiceSegmentParser.Error (msg, _) =>
                                             log.error (s"parse error: $msg")
                                     }
                                 case message.Failure (msg, _) =>

@@ -1,16 +1,10 @@
 package ch.ninecode.edifact
 
-import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.file.FileSystems
 import java.nio.file.StandardOpenOption
 
-import scala.io.Source
 import org.scalatest.FunSuite
-
-import scala.util.parsing.input.PagedSeq
-import scala.util.parsing.input.PagedSeqReader
-import scala.util.parsing.input.Reader
 
 class EDIFACTSuite extends FunSuite
 {
@@ -140,8 +134,7 @@ class EDIFACTSuite extends FunSuite
         val scanner = SegmentScanner ("UNA:+.? 'FOO'BA")
         val message = SegmentParser (scanner.una)
         val segments = message.segment.*
-        val r = segments.apply (scanner)
-        r match
+        segments.apply (scanner) match
         {
             case message.Success (result: List[Segment], _) =>
                 result.foreach ((x: Segment) => println (x.name))
@@ -150,6 +143,34 @@ class EDIFACTSuite extends FunSuite
                 fail (s"parse error: $msg")
             case message.Error (msg, _) =>
                 assert (msg.startsWith ("segment name not found"), "error message is wrong")
+        }
+    }
+
+    test ("ParseSegmentWithReleaseCharacter")
+    {
+        val scanner = SegmentScanner ("DTM+163:200901010000?+01:303")
+        val message = SegmentParser (scanner.una)
+        val segments = message.segment.*
+        segments.apply (scanner) match
+        {
+            case message.Success (result: List[Segment], rest) =>
+                assert (result.length == 1)
+                assert (rest.atEnd)
+                val segment = result.head
+                assert (segment.name == "DTM")
+                assert (segment.fields != null)
+                assert (segment.fields.length == 1)
+                val field = segment.fields.head
+                assert (field.text == "163:200901010000+01:303")
+                assert (field.submembers != null)
+                assert (field.submembers.length == 3)
+                assert (field.submembers.head.text == "163")
+                assert (field.submembers.tail.head.text == "200901010000+01")
+                assert (field.submembers.tail.tail.head.text == "303")
+            case message.Failure (msg, _) =>
+                fail (s"parse failure: $msg")
+            case message.Error (msg, _) =>
+                fail (s"parse error: $msg")
         }
     }
 
@@ -179,19 +200,5 @@ class EDIFACTSuite extends FunSuite
         val after = System.nanoTime
         info ("reading %d bytes took %g seconds".format (size, (after - before) / 1e9))
     }
-
-    //    test ("data with release character")
-    //    {
-    //        val buffer = ByteBuffer.wrap ("UNA:+.? 'DTM+163:200901010000?+01:303'".getBytes)
-    //        val mscons = new MSCONS (buffer)
-    //        mscons.parseUNA ()
-    //        val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
-    //        assert (segs.length == 1)
-    //        assert (mscons.buffer.remaining == 0)
-    //        val data = mscons.parseData (segs.head)
-    //        assert (data.length == 2)
-    //        assert (segToString (data.head) == "DTM")
-    //        assert (segToString (data.tail.head) == "163:200901010000+01:303")
-    //    }
 }
 
