@@ -174,6 +174,10 @@ class EDIFACTSuite extends FunSuite
         }
     }
 
+    test ("BGM")
+    {
+    }
+
     test ("ParseSample")
     {
         val before = System.nanoTime

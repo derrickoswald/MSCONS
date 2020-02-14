@@ -26,7 +26,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 1 - default")
     {
         val buffer = ByteBuffer.wrap ("".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
         assert (mscons.decimal_notification == '.')
@@ -37,7 +37,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 2 - read default")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.? 'X".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -50,7 +50,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 3 - read non-default")
     {
         val buffer = ByteBuffer.wrap ("UNA:+,? 'X".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -63,7 +63,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 4 - terminator")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.? ;XYZ;0".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -78,7 +78,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 5 - none")
     {
         val buffer = ByteBuffer.wrap ("XYZ'".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -91,7 +91,7 @@ class MSCONSSuite extends FunSuite
     test ("UNA 6 - none no terminator")
     {
         val buffer = ByteBuffer.wrap ("XYZ;".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -104,7 +104,7 @@ class MSCONSSuite extends FunSuite
     test ("segment with release character default")
     {
         val buffer = ByteBuffer.wrap ("XY?'Z'A".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (mscons.component_data_element_separator == ':')
         assert (mscons.data_element_separator == '+')
@@ -119,7 +119,7 @@ class MSCONSSuite extends FunSuite
     test ("segment with release character special")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.\\ 'XY\\'Z'A".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         assert (':' == mscons.component_data_element_separator)
         assert ('+' == mscons.data_element_separator)
@@ -134,7 +134,7 @@ class MSCONSSuite extends FunSuite
     test ("multi-segment")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.? 'FOO'BAR'".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
         assert (segs.length == 2)
@@ -146,7 +146,7 @@ class MSCONSSuite extends FunSuite
     test ("multi-segment truncated")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.? 'FOO'BA".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
         assert (segs.length == 2)
@@ -158,7 +158,7 @@ class MSCONSSuite extends FunSuite
     test ("data with release character")
     {
         val buffer = ByteBuffer.wrap ("UNA:+.? 'DTM+163:200901010000?+01:303'".getBytes)
-        val mscons = new MSCONS (buffer)
+        val mscons = new MSCONS_old (buffer)
         mscons.parseUNA ()
         val segs = mscons.parseAll (mscons.buffer, mscons.segment_terminator)
         assert (segs.length == 1)
