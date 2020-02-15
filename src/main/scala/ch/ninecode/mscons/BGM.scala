@@ -1,8 +1,6 @@
 package ch.ninecode.mscons
 
-import ch.ninecode.edifact.Field
 import ch.ninecode.edifact.FieldExtractor
-import ch.ninecode.edifact.FieldListParser
 
 //    010    C002 DOCUMENT/MESSAGE NAME                      C    1
 //    1001  Document name code                        C      an..3
@@ -36,12 +34,12 @@ case class Document_Message_Identification (
 
 /** To indicate the type and function of a message and to transmit the identifying number. */
 case class BGM (
-   c002: Document_Message_Name = Document_Message_Name (),
-   c106: Document_Message_Identification = Document_Message_Identification (),
-   _1225: String = null,
-   _4343: String = null)
+    documentMessageName: Document_Message_Name = Document_Message_Name (),
+    documentMessageIdentification: Document_Message_Identification = Document_Message_Identification (),
+    messageFunctionCode: String = null,
+    responseTypeCode: String = null)
 
-object BGM extends FieldExtractor
+object BGM extends FieldExtractor[BGM]
 {
     //        010    C002 DOCUMENT/MESSAGE NAME                      C    1
     //        010    1001  Document name code                        C      an..3
@@ -49,54 +47,42 @@ object BGM extends FieldExtractor
     //        030    3055  Code list responsible agency code         C      an..3
     //        040    1000  Document name                             C      an..35
 
-    def c002_1001: Parser[String] = alphanumeric (3)
-    def c002_1131: Parser[String] = alphanumeric (17)
-    def c002_3055: Parser[String] = alphanumeric (3)
-    def c002_1000: Parser[String] = alphanumeric (35)
-    type Q = Option[String] ~ Option[String] ~ Option[String] ~ Option[String]
-    val c002_p: Parser[Q] = c002_1001.? ~ c002_1131.? ~ c002_3055.? ~ c002_1000.?
-    def c002: Parser[Document_Message_Name] =
-        fields (c002_p, (r: Q) => Document_Message_Name (r._1._1._1.orNull, r._1._1._2.orNull, r._1._2.orNull, r._2.orNull))
+    private lazy val c002_1001 = alphanumeric (3)
+    private lazy val c002_1131 = alphanumeric (17)
+    private lazy val c002_3055 = alphanumeric (3)
+    private lazy val c002_1000 = alphanumeric (35)
+    private lazy val c002 =
+        subfields (
+            c002_1001.? ~ c002_1131.? ~ c002_3055.? ~ c002_1000.? ^^
+                { case c002_1001 ~ c002_1131 ~ c002_3055 ~ c002_1000  => Document_Message_Name (c002_1001.orNull, c002_1131.orNull, c002_3055.orNull, c002_1000.orNull) }
+        )
 
     //    1004  Document identifier                       C      an..35
     //    1056  Version identifier                        C      an..9
     //    1060  Revision identifier                       C      an..6
 
-    def c106_1004: Parser[String] = alphanumeric (35)
-    def c106_1056: Parser[String] = alphanumeric (9)
-    def c106_1060: Parser[String] = alphanumeric (6)
-    type R = Option[String] ~ Option[String] ~ Option[String]
-    def c106_p: Parser[R] = c106_1004.? ~ c106_1056.? ~ c106_1060.?
-    def c106: Parser[Document_Message_Identification] =
-        fields (c106_p, (r: R) => Document_Message_Identification (r._1._1.orNull, r._1._2.orNull, r._2.orNull))
+    private lazy val c106_1004 = alphanumeric (35)
+    private lazy val c106_1056 = alphanumeric (9)
+    private lazy val c106_1060 = alphanumeric (6)
+    private lazy val c106 =
+        subfields (
+            c106_1004.? ~ c106_1056.? ~ c106_1060.? ^^
+                { case c106_1004 ~ c106_1056 ~ c106_1060 => Document_Message_Identification (c106_1004.orNull, c106_1056.orNull, c106_1060.orNull) }
+        )
 
     //    030    1225 MESSAGE FUNCTION CODE                      C    1 an..3
 
-    def _1225: Parser[String] = alphanumeric (3)
+    private lazy val _1225 = alphanumeric (3)
 
     //    040    4343 RESPONSE TYPE CODE                         C    1 an..3
 
-    def _4343: Parser[String] = alphanumeric (3)
+    private lazy val _4343 = alphanumeric (3)
 
-    type S = Option[Document_Message_Name] ~ Option[Document_Message_Identification] ~ Option[String] ~ Option[String]
-    val bgm: Parser[S] = c002.? ~ c106.? ~ _1225.? ~ _4343.?
-    def bgm_parser: Parser[BGM] =
-        segments (bgm, (r: S) => BGM (r._1._1._1.orNull, r._1._1._2.orNull, r._1._2.orNull, r._2.orNull))
-    // { case c002 ~ c106 ~ s1 ~ s2 => BGM (c002.orNull, c106.orNull, s1.orNull, s2.orNull) })
+    lazy val bgm_fields: Parser[BGM] =
+        fields (
+            c002.? ~ c106.? ~ _1225.? ~ _4343.? ^^
+                { case c002 ~ c106 ~ _1225 ~ _4343 => BGM (c002.orNull, c106.orNull, _1225.orNull, _4343.orNull) }
+        )
 
-    def apply (fields: List[Field]): BGM =
-    {
-        bgm_parser (FieldListParser (fields)) match
-        {
-            case Success (r, _) => r
-            case Failure (msg, _) =>
-                log.error (s"BGM segment parse failure: $msg")
-                BGM ()
-            case Error (msg, _) =>
-                log.error (s"service segments parse error: $msg")
-                BGM ()
-        }
-    }
-    // ^^ { case one ~ two => Member ("", one :: two :: Nil) }
+    override def phrase: Parser[BGM] = bgm_fields
 }
-

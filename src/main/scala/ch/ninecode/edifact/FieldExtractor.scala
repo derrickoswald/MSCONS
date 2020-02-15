@@ -6,15 +6,28 @@ import org.slf4j.LoggerFactory
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.Reader
 
-trait FieldExtractor extends Parsers
+abstract class FieldExtractor[T] extends Parsers
 {
     val log: Logger = LoggerFactory.getLogger (getClass)
     type Elem = Field
     override type Input = Reader[Field]
 
-    def alphanumeric (chars: Int): Parser[String] = acceptIf (x => x.text.length <= chars)(field => s"$field > $chars characters") ^^ (x => x.text)
+    /**
+     * Simple alpha-numeric text parser with a size limit.
+     *
+     * @param size the maximum number of characters
+     * @return the parsed string
+     */
+    def alphanumeric (size: Int): Parser[String] = acceptIf (x => x.text.length <= size)(field => s"$field > $size characters") ^^ (x => x.text)
 
-    def fields[T,Q] (phrase: Parser[Q], constructor: Q => T): Parser[T] =
+    /**
+     * The subfield parser using Reader[Field].
+     *
+     * @param phrase the composite phrase of contents needed to satisfy correct parsing
+     * @tparam Q the type of this parser
+     * @return a parser for the subfields
+     */
+    def subfields[Q] (phrase: Parser[Q]): Parser[Q] =
         Parser
         {
             in =>
@@ -24,7 +37,7 @@ trait FieldExtractor extends Parsers
                 {
                     case Success (r, rest) =>
                         if (rest.atEnd)
-                            Success (constructor (r), in.rest)
+                            Success (r, in.rest)
                         else
                         {
                             log.error ("too many subfields")
@@ -39,7 +52,14 @@ trait FieldExtractor extends Parsers
                 }
         }
 
-    def segments[T,Q] (phrase: Parser[Q], constructor: Q => T): Parser[T] =
+    /**
+     * The field parser using Reader[Field].
+     *
+     * @param phrase the composite phrase of contents needed to satisfy correct parsing
+     * @tparam Q the type of this parser
+     * @return a parser for the fields
+     */
+    def fields[Q] (phrase: Parser[Q]): Parser[Q] =
         Parser
         {
             in =>
@@ -49,7 +69,7 @@ trait FieldExtractor extends Parsers
                 {
                     case Success (r, rest) =>
                         if (rest.atEnd)
-                            Success (constructor (r), rest)
+                            Success (r, rest)
                         else
                         {
                             log.error ("too many fields")
@@ -63,4 +83,33 @@ trait FieldExtractor extends Parsers
                         Error ("bad fields", rest)
                 }
         }
+
+    /**
+     * The parser for the contents of the segment.
+     *
+     * @return a parser using Reader[Field] to produce T
+     */
+    def phrase: Parser[T]
+
+    /**
+     * Generic apply method using the phrase.
+     *
+     * @param segment the segment with the contents to apply to create T
+     * @return the instantiated object
+     */
+    def apply (segment: Segment): T =
+    {
+        phrase (FieldListParser (segment.fields)) match
+        {
+            case Success (r, _) => r
+            case Failure (msg, _) =>
+                log.error (s"${segment.name} segment parse failure: $msg")
+                val constructor = classOf[Class[T]].getConstructors()(0)
+                constructor.newInstance().asInstanceOf[T]
+            case Error (msg, _) =>
+                log.error (s"${segment.name} segment parse error: $msg")
+                val constructor = classOf[Class[T]].getConstructors()(0)
+                constructor.newInstance().asInstanceOf[T]
+        }
+    }
 }
