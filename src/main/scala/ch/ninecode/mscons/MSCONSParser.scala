@@ -33,14 +33,24 @@ case class MSCONSParser (options: MSCONSOptions)
                 val x = ServiceSegmentParser.read (result)
                 x match
                 {
-                    case ServiceSegmentParser.Success (r, _) =>
+                    case ServiceSegmentParser.Success (r, rest) =>
                         if (   (r.unh.Type == "MSCONS")
                             && (r.unh.Version == "D"))
                         {
                             r.unh.Release match
                             {
-                                case "04B" => println (r)
-                                case _ => log.error (s"${r.unh.Type} version ${r.unh.Version} release ${r.unh.Release} is not supported")
+                                case "04B" =>
+                                    MSCONSMessage04B.phrase (rest) match
+                                    {
+                                        case MSCONSMessage04B.Success (message, rest) =>
+                                            assert (rest.atEnd)
+                                        case MSCONSMessage04B.Failure (message, _) =>
+                                            log.error (s"parse failed '$message'")
+                                        case MSCONSMessage04B.Error (message, _) =>
+                                            log.error (s"parse error '$message'")
+                                    }
+                                case _ =>
+                                    log.error (s"${r.unh.Type} version ${r.unh.Version} release ${r.unh.Release} is not supported")
                             }
                         }
 
@@ -55,9 +65,4 @@ case class MSCONSParser (options: MSCONSOptions)
                 log.error (s"parse error: $msg")
         }
     }
-}
-
-object MSCONSParser
-{
-
 }

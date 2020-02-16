@@ -21,6 +21,14 @@ abstract class FieldExtractor[T] extends Parsers
     def alphanumeric (size: Int): Parser[String] = acceptIf (x => x.text.length <= size)(field => s"$field > $size characters") ^^ (x => x.text)
 
     /**
+     * Simple numeric text parser with a size limit.
+     *
+     * @param size the maximum number of characters
+     * @return the parsed number
+     */
+    def numeric (size: Int): Parser[Double] = acceptIf (x => x.text.length <= size)(field => s"$field > $size characters") ^^ (x => x.text.toDouble)
+
+    /**
      * The subfield parser using Reader[Field].
      *
      * @param phrase the composite phrase of contents needed to satisfy correct parsing

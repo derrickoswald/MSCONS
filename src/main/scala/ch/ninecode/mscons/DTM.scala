@@ -15,8 +15,8 @@ import ch.ninecode.edifact.FieldExtractor
 /** To specify date, and/or time, or period. */
 case class DTM (
    functionCodeQualifier: String = "ZZZ",
-   text: String = null,
-   formatCode: String = null)
+   text: Option[String] = None,
+   formatCode: Option[String] = None)
 {
     def getTime: Calendar =
     {
@@ -104,42 +104,49 @@ case class DTM (
 //        Calendar date including time with minutes: C=Century;
 //        Y=Year; M=Month; D=Day; H=Hour; M=Minutes.
 
-            case "203" =>
+            case Some ("203") =>
                 // Calendar date including time with minutes: C=Century;
                 // Y=Year; M=Month; D=Day; H=Hour; M=Minutes.
                 // 201912140000
-                val code = "CCYYMMDDHHMM"
-                val value: String = if (text.length > code.length)
+                text match
                 {
-//                    log.warning (s"DTM text '$text' exceeds code length of '$code'")
-                    println (s"DTM text '$text' exceeds code length of '$code'")
-                    text.substring (0, code.length)
-                }
-                else if (text.length < code.length)
-                {
-//                    log.warning (s"DTM text '$text' subceeds code length of '$code'")
-                    println (s"DTM text '$text' subceeds code length of '$code'")
-                    (text :: List.fill (text.length - code.length)("0")).mkString ("")
-                }
-                else
-                    text
+                    case Some (string) =>
+                        val code = "CCYYMMDDHHMM"
+                        val value: String = if (string.length > code.length)
+                        {
+//                            log.warning (s"DTM text '$string' exceeds code length of '$code'")
+                            println (s"DTM text '$string' exceeds code length of '$code'")
+                            string.substring (0, code.length)
+                        }
+                        else if (string.length < code.length)
+                        {
+//                            log.warning (s"DTM text '$string' subceeds code length of '$code'")
+                            println (s"DTM text '$string' subceeds code length of '$code'")
+                            (text :: List.fill (string.length - code.length)("0")).mkString ("")
+                        }
+                        else
+                            string
 
-                val pattern = "yyyyMMddHHmm"
-                val format = new SimpleDateFormat (pattern)
-                val date = try
-                {
-                    format.parse (value)
+                        val pattern = "yyyyMMddHHmm"
+                        val format = new SimpleDateFormat (pattern)
+                        val date = try
+                        {
+                            format.parse (value)
+                        }
+                        catch
+                        {
+                            case pe: ParseException =>
+//                                log.warning (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
+                                println (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
+                                Calendar.getInstance.getTime
+                        }
+                        val calendar = Calendar.getInstance ()
+                        calendar.setTimeInMillis (date.getTime)
+                        calendar
+                    case None =>
+                        println (s"DTM has no text")
+                        Calendar.getInstance ()
                 }
-                catch
-                {
-                    case pe: ParseException =>
-//                        log.warning (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
-                        println (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
-                        Calendar.getInstance.getTime
-                }
-                val calendar = Calendar.getInstance ()
-                calendar.setTimeInMillis (date.getTime)
-                calendar
 
 //        204   CCYYMMDDHHMMSS
 //        Calendar date including time with seconds:
@@ -400,10 +407,10 @@ object DTM extends FieldExtractor[DTM]
     private lazy val c507 =
         subfields (
             c507_2005 ~ c507_2380.? ~ c507_2379.? ^^
-                { case c507_2005 ~ c507_2380 ~ c507_2379  => DTM (c507_2005, c507_2380.orNull, c507_2379.orNull) }
+                { case c507_2005 ~ c507_2380 ~ c507_2379  => DTM (c507_2005, c507_2380, c507_2379) }
         )
 
-    lazy val dtm_fields: Parser[DTM] = fields (c507)
+    lazy val dtm_fields: Parser[DTM] = fields (c507).named ("DTM")
 
     override def phrase: Parser[DTM] = dtm_fields
 }
