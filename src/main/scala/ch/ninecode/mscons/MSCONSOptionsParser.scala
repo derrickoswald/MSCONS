@@ -7,7 +7,7 @@ class MSCONSOptionsParser (APPLICATION_NAME: String, APPLICATION_VERSION: String
 {
     head (APPLICATION_NAME, APPLICATION_VERSION)
 
-    val default = MSCONSOptions ()
+    val default: MSCONSOptions = MSCONSOptions ()
     var unittest = false
     var helpout = false
     var versionout = false

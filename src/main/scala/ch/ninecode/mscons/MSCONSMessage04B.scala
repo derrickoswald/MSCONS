@@ -1,14 +1,5 @@
 package ch.ninecode.mscons
 
-import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
-import scala.util.parsing.input.Reader
-
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
-import ch.ninecode.edifact.Segment
-
 //    Pos     Tag Name                                     S   R
 //
 //    HEADER SECTION
@@ -75,24 +66,51 @@ import ch.ninecode.edifact.Segment
 //    00430   CNT Control total                            C   99
 //    00440   UNT Message trailer                          M   1
 
-case class Group1 (rff: RFF, dtm_p: Option[DTM])
+case class Group1 (
+    rff: RFF,
+    dtm_p: Option[DTM])
+
+case class Group3 (
+    rff: RFF,
+    dtm_p: Option[DTM]
+)
+
+case class Group4 (cta: CTA, com: COM)
+
+case class Group2 (
+    nad: NAD,
+    group3: Option[List[Group3]],
+    group4: Option[List[Group4]]
+)
 
 case class MSCONSMessage04B (
     bgm: BGM,
     dtm: DTM,
     cux: Option[CUX],
-    group1: Option[List[Group1]]
+    group1: Option[List[Group1]],
+    group2: Option[List[Group2]],
+    uns: UNS
 )
 
 object MSCONSMessage04B extends MSCONSMessage
 {
     lazy val bgm: Parser[BGM] = expect ("BGM", x => BGM (x))
     lazy val dtm: Parser[DTM] = expect ("DTM", x => DTM (x))
-    lazy val cux: Parser[CUX] = expect ("CUX", x => CUX (x))
+    lazy val cux: Parser[Option[CUX]] = expect ("CUX", x => CUX (x)).?
     lazy val rff: Parser[RFF] = expect ("RFF", x => RFF (x))
     lazy val group1: Parser[Option[List[Group1]]] = repAtMostN (9, false, rff ~ dtm.?).? ^^
-        (g => if (g.isDefined) Some (g.get.map (x => Group1 (x._1, x._2))) else None)
+        (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case rff ~ dtm => Group1 (rff, dtm) })) else None)
+    lazy val nad: Parser[NAD] = expect ("NAD", x => NAD (x))
+    lazy val group3: Parser[Option[List[Group3]]] = repAtMostN (9, false, rff ~ dtm.?).? ^^
+        (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case rff ~ dtm => Group3 (rff, dtm) })) else None)
+    lazy val cta: Parser[CTA] = expect ("CTA", x => CTA (x))
+    lazy val com: Parser[COM] = expect ("COM", x => COM (x))
+    lazy val group4: Parser[Option[List[Group4]]] = repAtMostN (9, false, cta ~ com).? ^^
+        (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case cta ~ com => Group4 (cta, com) })) else None)
+    lazy val group2: Parser[Option[List[Group2]]] = repAtMostN (99, false, nad ~ group3 ~ group4).? ^^
+        (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case nad ~ g3 ~ g4 => Group2 (nad, g3, g4) })) else None)
+    lazy val uns: Parser[UNS] = expect ("UNS", x => UNS (x))
 
-    val phrase: Parser[MSCONSMessage04B] = bgm ~ dtm ~ cux.? ~ group1 ^^
-        { case bgm ~ dtm ~ cux ~ group1 => MSCONSMessage04B (bgm, dtm, cux, group1) }
+    val phrase: Parser[MSCONSMessage04B] = bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns ^^
+        { case bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns => MSCONSMessage04B (bgm, dtm, cux, group1, group2, uns) }
 }

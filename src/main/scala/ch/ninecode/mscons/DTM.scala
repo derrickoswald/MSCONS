@@ -400,13 +400,13 @@ case class DTM (
 object DTM extends FieldExtractor[DTM]
 {
     private lazy val c507_2005 = alphanumeric (3)
-    private lazy val c507_2380 = alphanumeric (35)
-    private lazy val c507_2379 = alphanumeric (3)
+    private lazy val c507_2380 = alphanumeric_? (35)
+    private lazy val c507_2379 = alphanumeric_? (3)
 
     // Note, we construct the DTM here directly rather than encapsulating the subfields in a Date_Time_Period case class
     private lazy val c507 =
         subfields (
-            c507_2005 ~ c507_2380.? ~ c507_2379.? ^^
+            c507_2005 ~ c507_2380 ~ c507_2379 ^^
                 { case c507_2005 ~ c507_2380 ~ c507_2379  => DTM (c507_2005, c507_2380, c507_2379) }
         )
 

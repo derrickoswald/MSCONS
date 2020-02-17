@@ -9,6 +9,7 @@ import ch.ninecode.edifact.SegmentListParser
 import ch.ninecode.edifact.SegmentParser
 import ch.ninecode.edifact.SegmentScanner
 import ch.ninecode.edifact.ServiceSegmentParser
+import ch.ninecode.mscons
 
 class SegmentSuite extends FunSuite
 {
@@ -125,6 +126,22 @@ class SegmentSuite extends FunSuite
             )
     }
 
+    test ("RFF")
+    {
+        new Mock[RFF] { def phrase: Parser[RFF] = MSCONSMessage04B.rff.asInstanceOf[Parser[RFF]] }
+            .parseAndCheck (
+                "RFF+Z13:13008'",
+                rff =>
+                {
+                    assert (rff.referenceCodeQualifier.contains ("Z13"))
+                    assert (rff.referenceIdentifier.contains ("13008"))
+                    assert (rff.documentLineIdentifier.isEmpty)
+                    assert (rff.referenceVersionIdentifier.isEmpty)
+                    assert (rff.revisionIdentifier.isEmpty)
+                }
+            )
+    }
+
     test ("Group1")
     {
         new Mock[Option[List[Group1]]] { def phrase: Parser[Option[List[Group1]]] = MSCONSMessage04B.group1.asInstanceOf[Parser[Option[List[Group1]]]] }
@@ -145,9 +162,49 @@ class SegmentSuite extends FunSuite
             )
     }
 
+    test ("NAD")
+    {
+        new Mock[NAD] { def phrase: Parser[NAD] = MSCONSMessage04B.nad.asInstanceOf[Parser[NAD]] }
+            .parseAndCheck (
+                "NAD+MS+12X-SAK-N------6::293'",
+                nad =>
+                {
+                    assert (nad.partyFunctionCodeQualifier.contains ("MS"))
+                    assert (nad.partyIdentificationDetails.isDefined)
+                    val details = nad.partyIdentificationDetails.get
+                    assert (details.partyIdentifier.contains ("12X-SAK-N------6"))
+                    assert (details.codeListIdetificationCode.isEmpty)
+                    assert (details.codeListResponsibleAgencyCode.contains ("293"))
+                }
+            )
+    }
+
+    test ("Group2")
+    {
+        new Mock[Option[List[Group2]]] { def phrase: Parser[Option[List[Group2]]] = MSCONSMessage04B.group2.asInstanceOf[Parser[Option[List[Group2]]]] }
+            .parseAndCheck (
+                "NAD+MS+12X-SAK-N------6::293'",
+                group2 =>
+                {
+                    assert (group2.nonEmpty)
+                    assert (group2.get.length == 1)
+                    val g2 = group2.get.head
+                    val nad = g2.nad
+                    assert (nad.partyFunctionCodeQualifier.contains ("MS"))
+                    assert (nad.partyIdentificationDetails.isDefined)
+                    val details = nad.partyIdentificationDetails.get
+                    assert (details.partyIdentifier.contains ("12X-SAK-N------6"))
+                    assert (details.codeListIdetificationCode.isEmpty)
+                    assert (details.codeListResponsibleAgencyCode.contains ("293"))
+                    assert (g2.group3.isEmpty)
+                    assert (g2.group4.isEmpty)
+                }
+            )
+    }
+
     test ("Message")
     {
-        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'RFF+Z13:13008'"
+        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'RFF+Z13:13008'NAD+MS+12X-SAK-N------6::293'NAD+MR+12X-SAK-N------6::293'UNS+D'"
         parseAndCheck (
             mscons,
             message =>
@@ -176,6 +233,32 @@ class SegmentSuite extends FunSuite
                 assert (item1.rff.referenceVersionIdentifier.isEmpty)
                 assert (item1.rff.revisionIdentifier.isEmpty)
                 assert (item1.dtm_p.isEmpty)
+
+                assert (message.group2.nonEmpty)
+                assert (message.group2.get.length == 2)
+                message.group2.get.zipWithIndex.foreach (
+                    item =>
+                    {
+                        val (group2, index) = item
+                        val nad = group2.nad
+                        assert (nad.partyFunctionCodeQualifier.contains (if (0 == index) "MS" else "MR"))
+                        assert (nad.partyIdentificationDetails.nonEmpty)
+                        assert (nad.partyIdentificationDetails.get.partyIdentifier.contains ("12X-SAK-N------6"))
+                        assert (nad.partyIdentificationDetails.get.codeListIdetificationCode.isEmpty)
+                        assert (nad.partyIdentificationDetails.get.codeListResponsibleAgencyCode.contains ("293"))
+                        assert (nad.nameAndAddress.isEmpty)
+                        assert (nad.partyName.isEmpty)
+                        assert (nad.street.isEmpty)
+                        assert (nad.cityName.isEmpty)
+                        assert (nad.countrySubdivisionDetails.isEmpty)
+                        assert (nad.postalIdentificationCode.isEmpty)
+                        assert (nad.countryIdentifier.isEmpty)
+                        assert (group2.group3.isEmpty)
+                        assert (group2.group4.isEmpty)
+                    }
+                )
+
+                assert (message.uns.sectionIdentification == "D")
             }
         )
     }

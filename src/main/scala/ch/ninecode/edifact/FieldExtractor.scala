@@ -20,6 +20,22 @@ abstract class FieldExtractor[T] extends Parsers
      */
     def alphanumeric (size: Int): Parser[String] = acceptIf (x => x.text.length <= size)(field => s"$field > $size characters") ^^ (x => x.text)
 
+    def alphanumeric_? (size: Int): Parser[Option[String]] = Parser
+    {
+        in =>
+            if (in.atEnd)
+                Success (None, in)
+            else
+            {
+                val field = in.first
+                val string = field.text
+                if (string.length <= size)
+                    Success (if (string.length > 0) Some (string) else None, in.rest)
+                else
+                    Failure (s"$field > $size characters", in)
+            }
+    }
+
     /**
      * Simple numeric text parser with a size limit.
      *
@@ -27,6 +43,22 @@ abstract class FieldExtractor[T] extends Parsers
      * @return the parsed number
      */
     def numeric (size: Int): Parser[Double] = acceptIf (x => x.text.length <= size)(field => s"$field > $size characters") ^^ (x => x.text.toDouble)
+
+    def numeric_? (size: Int): Parser[Option[Double]] = Parser
+    {
+        in =>
+            if (in.atEnd)
+                Success (None, in)
+            else
+            {
+                val field = in.first
+                val string = field.text
+                if (string.length <= size)
+                    Success (if (string.length > 0) Some (string.toDouble) else None, in.rest)
+                else
+                    Failure (s"$field > $size characters", in)
+            }
+    }
 
     /**
      * The subfield parser using Reader[Field].
@@ -41,23 +73,26 @@ abstract class FieldExtractor[T] extends Parsers
             in =>
                 def parse (p: Parser[Q], in: FieldListParser): ParseResult[Q] = p(in)
 
-                parse (phrase, FieldListParser (in.first.submembers)) match
-                {
-                    case Success (r, rest) =>
-                        if (rest.atEnd)
-                            Success (r, in.rest)
-                        else
-                        {
-                            log.error ("too many subfields")
-                            Error ("too many subfields", in.rest)
-                        }
-                    case Failure (msg, rest) =>
-                        log.error (s"bad subfields $msg")
-                        Error ("bad subfields", in.rest)
-                    case Error (msg, rest) =>
-                        log.error (s"bad subfields: $msg")
-                        Error ("bad subfields", in.rest)
-                }
+                if (!in.atEnd)
+                    parse (phrase, FieldListParser (in.first.submembers)) match
+                    {
+                        case Success (r, rest) =>
+                            if (rest.atEnd)
+                                Success (r, in.rest)
+                            else
+                            {
+                                log.error ("too many subfields")
+                                Error ("too many subfields", in.rest)
+                            }
+                        case Failure (msg, rest) =>
+                            log.error (s"bad subfields $msg")
+                            Error ("bad subfields", in.rest)
+                        case Error (msg, rest) =>
+                            log.error (s"bad subfields: $msg")
+                            Error ("bad subfields", in.rest)
+                    }
+                else
+                    Failure ("no subfields", in)
         }
 
     /**

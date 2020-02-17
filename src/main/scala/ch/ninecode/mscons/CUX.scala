@@ -25,6 +25,7 @@ case class Currency_Details (
     currencyRate: Option[Double] = None
 )
 
+// To specify currencies used in the transaction and relevant details for the rate of exchange.
 case class CUX (
     currencyDetails1: Option[Currency_Details] = None,
     currencyDetails2: Option[Currency_Details] = None,
@@ -41,26 +42,26 @@ object CUX extends FieldExtractor[CUX]
     //    6348  Currency rate                             C      n..4
 
     private lazy val c504_6347 = alphanumeric (3)
-    private lazy val c504_6345 = alphanumeric (3)
-    private lazy val c504_6343 = alphanumeric (3)
-    private lazy val c504_6348 = numeric (4)
+    private lazy val c504_6345 = alphanumeric_? (3)
+    private lazy val c504_6343 = alphanumeric_? (3)
+    private lazy val c504_6348 = numeric_? (4)
     private lazy val c504 =
         subfields (
-            c504_6347 ~ c504_6345.? ~ c504_6343.? ~ c504_6348.? ^^
+            c504_6347 ~ c504_6345 ~ c504_6343 ~ c504_6348 ^^
                 { case c504_6347 ~ c504_6345 ~ c504_6343 ~ c504_6348  => Currency_Details (c504_6347, c504_6345, c504_6343, c504_6348) }
         )
 
     //    030    5402 CURRENCY EXCHANGE RATE                     C    1 n..12
 
-    private lazy val _5402 = numeric (12)
+    private lazy val _5402 = numeric_? (12)
 
     //    040    6341 EXCHANGE RATE CURRENCY MARKET IDENTIFIER   C    1 an..3
 
-    private lazy val _6341 = alphanumeric (3)
+    private lazy val _6341 = alphanumeric_? (3)
 
     lazy val cux_fields: Parser[CUX] =
         fields (
-            c504.? ~ c504.? ~ _5402.? ~ _6341.? ^^
+            c504.? ~ c504.? ~ _5402 ~ _6341 ^^
                 { case c504_1 ~ c504_2 ~ _5402 ~ _6341 => CUX (c504_1, c504_2, _5402, _6341) }
         ).named ("CUX")
 

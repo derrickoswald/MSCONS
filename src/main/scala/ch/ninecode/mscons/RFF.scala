@@ -2,6 +2,7 @@ package ch.ninecode.mscons
 
 import ch.ninecode.edifact.FieldExtractor
 
+// To specify a reference.
 case class RFF (
     referenceCodeQualifier: String = "ZZZ",
     referenceIdentifier: Option[String] = None,
@@ -10,7 +11,6 @@ case class RFF (
     revisionIdentifier: Option[String] = None
 )
 
-// To specify a reference.
 object RFF extends FieldExtractor[RFF]
 {
     // RFF+Z13:13008
@@ -23,14 +23,14 @@ object RFF extends FieldExtractor[RFF]
 //    1060  Revision identifier                       C      an..6
 
     private lazy val C506_1153 = alphanumeric (3)
-    private lazy val C506_1154 = alphanumeric (70)
-    private lazy val C506_1156 = alphanumeric (6)
-    private lazy val C506_4000 = alphanumeric (35)
-    private lazy val C506_1060 = alphanumeric (6)
+    private lazy val C506_1154 = alphanumeric_? (70)
+    private lazy val C506_1156 = alphanumeric_? (6)
+    private lazy val C506_4000 = alphanumeric_? (35)
+    private lazy val C506_1060 = alphanumeric_? (6)
 
     lazy val rff_fields: Parser[RFF] =
         subfields (
-            C506_1153 ~ C506_1154.? ~ C506_1156.? ~ C506_4000.? ~ C506_1060.? ^^
+            C506_1153 ~ C506_1154 ~ C506_1156 ~ C506_4000 ~ C506_1060 ^^
                 { case _1153 ~ _1154 ~ _1156 ~ _4000 ~ _1060 => RFF (_1153, _1154, _1156, _4000, _1060) }
         ).named ("RFF")
 
