@@ -136,8 +136,8 @@ case class DTM (
                         catch
                         {
                             case pe: ParseException =>
-//                                log.warning (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
-                                println (s"DTM text '$text' cannot be parsed (${pe.getLocalizedMessage}) as format code $formatCode = '$code'")
+//                                log.warning (s"DTM text '$value' cannot be parsed (${pe.getLocalizedMessage}) as format code ${formatCode.get} = '$code'")
+                                println (s"DTM text '$value' cannot be parsed (${pe.getLocalizedMessage}) as format code ${formatCode.get} = '$code'")
                                 Calendar.getInstance.getTime
                         }
                         val calendar = Calendar.getInstance ()
@@ -167,7 +167,33 @@ case class DTM (
 //
 //        303   CCYYMMDDHHMMZZZ
 //        See 203 plus Z=Time zone.
-//
+
+            case Some ("303") =>
+                // See 203 plus Z=Time zone.
+                text match
+                {
+                    case Some (string) =>
+                        val code = "CCYYMMDDHHMMZZ"
+                        val pattern = "yyyyMMddHHmmX"
+                        val format = new SimpleDateFormat (pattern)
+                        val date = try
+                        {
+                            format.parse (string)
+                        }
+                        catch
+                        {
+                            case pe: ParseException =>
+//                                log.warning (s"DTM text '$string' cannot be parsed (${pe.getLocalizedMessage}) as format code {formatCode.get} = '$code'")
+                                println (s"DTM text '$string' cannot be parsed (${pe.getLocalizedMessage}) as format code ${formatCode.get} = '$code'")
+                                Calendar.getInstance.getTime
+                        }
+                        val calendar = Calendar.getInstance ()
+                        calendar.setTimeInMillis (date.getTime)
+                        calendar
+                    case None =>
+                        println (s"DTM has no text")
+                        Calendar.getInstance ()
+                }
 //        304   CCYYMMDDHHMMSSZZZ
 //        See 204 plus Z=Time zone.
 //

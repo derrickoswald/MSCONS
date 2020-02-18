@@ -202,9 +202,130 @@ class SegmentSuite extends FunSuite
             )
     }
 
+    test ("Group5")
+    {
+        new Mock[List[Group5]] { def phrase: Parser[List[Group5]] = MSCONSMessage04B.group5.asInstanceOf[Parser[List[Group5]]] }
+            .parseAndCheck (
+                "NAD+DP'LOC+172+CH1008801234500000000000000113813'DTM+163:201912140000?+01:303'DTM+164:201912140000?+01:303'LIN+1'PIA+5+1-1?:1.29.0*255:SRW'QTY+220:36.300'DTM+163:201912140000?+01:303'DTM+164:201912140015?+01:303'",
+                group5 =>
+                {
+                    assert (group5.nonEmpty)
+                    assert (group5.length == 1)
+                    val g5 = group5.head
+                    val nad = g5.nad
+                    assert (nad.partyFunctionCodeQualifier.contains ("DP"))
+                    val group6 = g5.group6
+                    assert (group6.nonEmpty)
+                    assert (group6.length == 1)
+                    val g6 = group6.head
+                    val loc = g6.loc
+                    assert (loc.locationFunctionCodeQualifier == "172")
+                    assert (loc.locationIdentification.isDefined)
+                    val id = loc.locationIdentification.get
+                    assert (id.locationIdentifier.contains ("CH1008801234500000000000000113813"))
+                    assert (id.codeListIdentificationCode.isEmpty)
+                    assert (id.codeListResponsibleAgencyCode.isEmpty)
+                    assert (id.locationName.isEmpty)
+                    assert (loc.relatedLocationOneIdentification.isEmpty)
+                    assert (loc.relatedLocationTwoIdentification.isEmpty)
+                    assert (loc.relationCode.isEmpty)
+                    assert (g6.dtm.nonEmpty)
+
+                    val dtms = g6.dtm.get
+                    assert (dtms.nonEmpty)
+                    assert (dtms.length == 2)
+                    var dtm = dtms.head
+                    assert (dtm.functionCodeQualifier == "163")
+                    assert (dtm.text.contains ("201912140000+01"))
+                    assert (dtm.formatCode.contains ("303"))
+                    var calendar = dtm.getTime
+                    assert (calendar.get (Calendar.YEAR) == 2019)
+                    assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                    assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                    assert (calendar.get (Calendar.HOUR) == 0)
+                    assert (calendar.get (Calendar.MINUTE) == 0)
+                    dtm = dtms.tail.head
+                    assert (dtm.functionCodeQualifier == "164")
+                    assert (dtm.text.contains ("201912140000+01"))
+                    assert (dtm.formatCode.contains ("303"))
+                    calendar = dtm.getTime
+                    assert (calendar.get (Calendar.YEAR) == 2019)
+                    assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                    assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                    assert (calendar.get (Calendar.HOUR) == 0)
+                    assert (calendar.get (Calendar.MINUTE) == 0)
+
+                    assert (g6.group7.isEmpty)
+                    assert (g6.group8.isEmpty)
+
+                    assert (g6.group9.nonEmpty)
+                    assert (g6.group9.get.nonEmpty)
+                    assert (g6.group9.get.length == 1)
+                    val g9 = g6.group9.get.head
+                    val lin = g9.lin
+                    assert (lin.lineItemIdentifier.contains ("1"))
+                    assert (lin.actionCode.isEmpty)
+                    assert (lin.itemNumberIdentification.isEmpty)
+                    assert (lin.subLineInformation.isEmpty)
+                    assert (lin.configurationLevelNumber.isEmpty)
+                    assert (lin.configurationOperationCode.isEmpty)
+
+                    assert (g9.pia.isDefined)
+                    assert (g9.pia.get.nonEmpty)
+                    assert (g9.pia.get.length == 1)
+                    val pia = g9.pia.get.head
+                    assert (pia.productIdentifierCodeQualifier == "5")
+                    val id1 = pia.itemNumberIdentification1
+                    assert (id1.itemIdentifier.contains ("1-1:1.29.0*255"))
+                    assert (id1.itemTypeIdentificationCode.contains ("SRW"))
+                    assert (id1.codeListIdentificationCode.isEmpty)
+                    assert (id1.codeListResponsibleAgencyCode.isEmpty)
+                    assert (pia.itemNumberIdentification2.isEmpty)
+                    assert (pia.itemNumberIdentification3.isEmpty)
+                    assert (pia.itemNumberIdentification4.isEmpty)
+                    assert (pia.itemNumberIdentification5.isEmpty)
+
+                    assert (g9.group10.nonEmpty)
+                    assert (g9.group10.length == 1)
+                    val g10 = g9.group10.head
+                    val qty = g10.qty
+                    assert (qty.quantityTypeCodeQualifier == "220")
+                    assert (qty.quantity == "36.300")
+                    assert (qty.measurementUnitCode.isEmpty)
+
+                    assert (g10.dtm.nonEmpty)
+                    assert (g10.dtm.get.length == 2)
+                    dtm = g10.dtm.get.head
+                    assert (dtm.functionCodeQualifier == "163")
+                    assert (dtm.text.contains ("201912140000+01"))
+                    assert (dtm.formatCode.contains ("303"))
+                    calendar = dtm.getTime
+                    assert (calendar.get (Calendar.YEAR) == 2019)
+                    assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                    assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                    assert (calendar.get (Calendar.HOUR) == 0)
+                    assert (calendar.get (Calendar.MINUTE) == 0)
+                    dtm = g10.dtm.get.tail.head
+                    assert (dtm.functionCodeQualifier == "164")
+                    assert (dtm.text.contains ("201912140015+01"))
+                    assert (dtm.formatCode.contains ("303"))
+                    calendar = dtm.getTime
+                    assert (calendar.get (Calendar.YEAR) == 2019)
+                    assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                    assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                    assert (calendar.get (Calendar.HOUR) == 0)
+                    assert (calendar.get (Calendar.MINUTE) == 15)
+
+                    assert (g10.sts.isEmpty)
+
+                    assert (g9.group11.isEmpty)
+                }
+            )
+    }
+
     test ("Message")
     {
-        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'RFF+Z13:13008'NAD+MS+12X-SAK-N------6::293'NAD+MR+12X-SAK-N------6::293'UNS+D'"
+        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'RFF+Z13:13008'NAD+MS+12X-SAK-N------6::293'NAD+MR+12X-SAK-N------6::293'UNS+D'NAD+DP'LOC+172+CH1008801234500000000000000113813'DTM+163:201912140000?+01:303'DTM+164:201912140000?+01:303'LIN+1'PIA+5+1-1?:1.29.0*255:SRW'QTY+220:36.300'DTM+163:201912140000?+01:303'DTM+164:201912140015?+01:303'"
         parseAndCheck (
             mscons,
             message =>
@@ -217,7 +338,7 @@ class SegmentSuite extends FunSuite
                 assert (message.dtm.functionCodeQualifier == "137")
                 assert (message.dtm.text.contains ("201912140000"))
                 assert (message.dtm.formatCode.contains ("203"))
-                val calendar = message.dtm.getTime
+                var calendar = message.dtm.getTime
                 assert (calendar.get (Calendar.YEAR) == 2019)
                 assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
                 assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
@@ -259,6 +380,118 @@ class SegmentSuite extends FunSuite
                 )
 
                 assert (message.uns.sectionIdentification == "D")
+
+                val group5 = message.group5
+                assert (group5.nonEmpty)
+                assert (group5.length == 1)
+                val g5 = group5.head
+                val nad = g5.nad
+                assert (nad.partyFunctionCodeQualifier.contains ("DP"))
+                val group6 = g5.group6
+                assert (group6.nonEmpty)
+                assert (group6.length == 1)
+                val g6 = group6.head
+                val loc = g6.loc
+                assert (loc.locationFunctionCodeQualifier == "172")
+                assert (loc.locationIdentification.isDefined)
+                val id = loc.locationIdentification.get
+                assert (id.locationIdentifier.contains ("CH1008801234500000000000000113813"))
+                assert (id.codeListIdentificationCode.isEmpty)
+                assert (id.codeListResponsibleAgencyCode.isEmpty)
+                assert (id.locationName.isEmpty)
+                assert (loc.relatedLocationOneIdentification.isEmpty)
+                assert (loc.relatedLocationTwoIdentification.isEmpty)
+                assert (loc.relationCode.isEmpty)
+                assert (g6.dtm.nonEmpty)
+
+                val dtms = g6.dtm.get
+                assert (dtms.nonEmpty)
+                assert (dtms.length == 2)
+                var dtm = dtms.head
+                assert (dtm.functionCodeQualifier == "163")
+                assert (dtm.text.contains ("201912140000+01"))
+                assert (dtm.formatCode.contains ("303"))
+                calendar = dtm.getTime
+                assert (calendar.get (Calendar.YEAR) == 2019)
+                assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                assert (calendar.get (Calendar.HOUR) == 0)
+                assert (calendar.get (Calendar.MINUTE) == 0)
+                dtm = dtms.tail.head
+                assert (dtm.functionCodeQualifier == "164")
+                assert (dtm.text.contains ("201912140000+01"))
+                assert (dtm.formatCode.contains ("303"))
+                calendar = dtm.getTime
+                assert (calendar.get (Calendar.YEAR) == 2019)
+                assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                assert (calendar.get (Calendar.HOUR) == 0)
+                assert (calendar.get (Calendar.MINUTE) == 0)
+
+                assert (g6.group7.isEmpty)
+                assert (g6.group8.isEmpty)
+
+                assert (g6.group9.nonEmpty)
+                assert (g6.group9.get.nonEmpty)
+                assert (g6.group9.get.length == 1)
+                val g9 = g6.group9.get.head
+                val lin = g9.lin
+                assert (lin.lineItemIdentifier.contains ("1"))
+                assert (lin.actionCode.isEmpty)
+                assert (lin.itemNumberIdentification.isEmpty)
+                assert (lin.subLineInformation.isEmpty)
+                assert (lin.configurationLevelNumber.isEmpty)
+                assert (lin.configurationOperationCode.isEmpty)
+
+                assert (g9.pia.isDefined)
+                assert (g9.pia.get.nonEmpty)
+                assert (g9.pia.get.length == 1)
+                val pia = g9.pia.get.head
+                assert (pia.productIdentifierCodeQualifier == "5")
+                val id1 = pia.itemNumberIdentification1
+                assert (id1.itemIdentifier.contains ("1-1:1.29.0*255"))
+                assert (id1.itemTypeIdentificationCode.contains ("SRW"))
+                assert (id1.codeListIdentificationCode.isEmpty)
+                assert (id1.codeListResponsibleAgencyCode.isEmpty)
+                assert (pia.itemNumberIdentification2.isEmpty)
+                assert (pia.itemNumberIdentification3.isEmpty)
+                assert (pia.itemNumberIdentification4.isEmpty)
+                assert (pia.itemNumberIdentification5.isEmpty)
+
+                assert (g9.group10.nonEmpty)
+                assert (g9.group10.length == 1)
+                val g10 = g9.group10.head
+                val qty = g10.qty
+                assert (qty.quantityTypeCodeQualifier == "220")
+                assert (qty.quantity == "36.300")
+                assert (qty.measurementUnitCode.isEmpty)
+
+                assert (g10.dtm.nonEmpty)
+                assert (g10.dtm.get.length == 2)
+                dtm = g10.dtm.get.head
+                assert (dtm.functionCodeQualifier == "163")
+                assert (dtm.text.contains ("201912140000+01"))
+                assert (dtm.formatCode.contains ("303"))
+                calendar = dtm.getTime
+                assert (calendar.get (Calendar.YEAR) == 2019)
+                assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                assert (calendar.get (Calendar.HOUR) == 0)
+                assert (calendar.get (Calendar.MINUTE) == 0)
+                dtm = g10.dtm.get.tail.head
+                assert (dtm.functionCodeQualifier == "164")
+                assert (dtm.text.contains ("201912140015+01"))
+                assert (dtm.formatCode.contains ("303"))
+                calendar = dtm.getTime
+                assert (calendar.get (Calendar.YEAR) == 2019)
+                assert (calendar.get (Calendar.MONTH) == 12 - 1) // months are 0 to 11
+                assert (calendar.get (Calendar.DAY_OF_MONTH) == 14)
+                assert (calendar.get (Calendar.HOUR) == 0)
+                assert (calendar.get (Calendar.MINUTE) == 15)
+
+                assert (g10.sts.isEmpty)
+
+                assert (g9.group11.isEmpty)
             }
         )
     }
