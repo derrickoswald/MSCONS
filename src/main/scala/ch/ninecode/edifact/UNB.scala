@@ -1,6 +1,7 @@
 package ch.ninecode.edifact
 
 case class UNB (SyntaxIdentifier: String, SyntaxVersionNumber: String)
+
 object UNB
 {
     def apply (fields: List[Field]): UNB =

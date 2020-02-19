@@ -9,7 +9,6 @@ import ch.ninecode.edifact.SegmentListParser
 import ch.ninecode.edifact.SegmentParser
 import ch.ninecode.edifact.SegmentScanner
 import ch.ninecode.edifact.ServiceSegmentParser
-import ch.ninecode.mscons
 
 class SegmentSuite extends FunSuite
 {
@@ -325,7 +324,13 @@ class SegmentSuite extends FunSuite
 
     test ("Message")
     {
-        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'RFF+Z13:13008'NAD+MS+12X-SAK-N------6::293'NAD+MR+12X-SAK-N------6::293'UNS+D'NAD+DP'LOC+172+CH1008801234500000000000000113813'DTM+163:201912140000?+01:303'DTM+164:201912140000?+01:303'LIN+1'PIA+5+1-1?:1.29.0*255:SRW'QTY+220:36.300'DTM+163:201912140000?+01:303'DTM+164:201912140015?+01:303'"
+        val mscons = "UNB+UNOC:3+12X-SAK-N------6:500+12X-SAK-N------6:500+191215:0430+eslevu14572840++TL'" +
+            "UNH+slevu14572840D+MSCONS:D:04B:UN:2.2e'BGM+7+slevu14572840D+9'DTM+137:201912140000:203'" +
+            "RFF+Z13:13008'NAD+MS+12X-SAK-N------6::293'NAD+MR+12X-SAK-N------6::293'" +
+            "UNS+D'NAD+DP'LOC+172+CH1008801234500000000000000113813'DTM+163:201912140000?+01:303'" +
+            "DTM+164:201912140000?+01:303'LIN+1'PIA+5+1-1?:1.29.0*255:SRW'" +
+            "QTY+220:36.300'DTM+163:201912140000?+01:303'DTM+164:201912140015?+01:303'" +
+            "UNT+109+slevu14572840D'UNZ+1+eslevu14572840'"
         parseAndCheck (
             mscons,
             message =>
@@ -492,6 +497,10 @@ class SegmentSuite extends FunSuite
                 assert (g10.sts.isEmpty)
 
                 assert (g9.group11.isEmpty)
+
+                val unt = message.unt
+                assert (unt.numberOfSegments == 109)
+                assert (unt.messageReferenceNumber == "slevu14572840D")
             }
         )
     }

@@ -3,6 +3,8 @@ package ch.ninecode.mscons
 import java.nio.channels.FileChannel
 import java.nio.file.FileSystems
 import java.nio.file.StandardOpenOption
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
@@ -43,7 +45,11 @@ case class MSCONSParser (options: MSCONSOptions)
                                     MSCONSMessage04B.phrase (rest) match
                                     {
                                         case MSCONSMessage04B.Success (message, rest) =>
-                                            assert (rest.atEnd)
+                                            if (!rest.atEnd)
+                                                log.warn (s"message incompletely parsed, stopped at ${rest.first}")
+                                            val readings = message.getReadings
+                                            val template = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss z")
+                                            readings.map (x => println (s"${x._1} ${x._2} ${template.format (x._3.getTime)} ${x._4} ${x._5}+${x._6}j ${x._7}"))
                                         case MSCONSMessage04B.Failure (message, _) =>
                                             log.error (s"parse failed '$message'")
                                         case MSCONSMessage04B.Error (message, _) =>

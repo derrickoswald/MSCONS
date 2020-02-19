@@ -34,12 +34,13 @@ import ch.ninecode.edifact.FieldExtractor
 //    1131  Code list identification code             C      an..17
 //    3055  Code list responsible agency code         C      an..3
 
-case class Item_Number_Identification (
-    itemIdentifier: Option[String],
-    itemTypeIdentificationCode: Option[String],
-    codeListIdentificationCode: Option[String],
-    codeListResponsibleAgencyCode: Option[String]
-)
+// duplicate: see LIN
+//case class Item_Number_Identification (
+//    itemIdentifier: Option[String],
+//    itemTypeIdentificationCode: Option[String],
+//    codeListIdentificationCode: Option[String],
+//    codeListResponsibleAgencyCode: Option[String]
+//)
 
 // To specify additional or substitutional item identification codes.
 case class PIA (

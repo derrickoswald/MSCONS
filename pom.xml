@@ -153,7 +153,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>ch.ninecode.mscons.MSCONSParser</mainClass>
+                            <mainClass>ch.ninecode.mscons.MSCONS</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

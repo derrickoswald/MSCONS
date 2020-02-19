@@ -1,5 +1,11 @@
 package ch.ninecode.mscons
 
+import java.util.Calendar
+import java.util.regex.Pattern
+
+import ch.ninecode.edifact.UNT
+import ch.ninecode.edifact.UNZ
+
 //    Pos     Tag Name                                     S   R
 //
 //    HEADER SECTION
@@ -100,6 +106,26 @@ case class Group10 (
     dtm: Option[List[DTM]],
     sts: Option[List[STS]]
 )
+{
+    def getValue: Option[(Calendar, Long, Double)] =
+    {
+        val value = qty.quantity.toDouble
+        if (dtm.isDefined)
+        {
+            val start = dtm.get.find (x => x.functionCodeQualifier == "163")
+            val end = dtm.get.find (x => x.functionCodeQualifier == "164")
+            if (start.isDefined && end.isDefined)
+            {
+                val s = start.get.getTime
+                Some ((s, end.get.getTime.getTimeInMillis - s.getTimeInMillis, value))
+            }
+            else
+                None
+        }
+        else
+            None
+    }
+}
 
 case class Group11 (
     cci: CCI,
@@ -138,8 +164,217 @@ case class MSCONSMessage04B (
     group1: Option[List[Group1]],
     group2: Option[List[Group2]],
     uns: UNS,
-    group5: List[Group5]
+    group5: List[Group5],
+    cnt: Option[CNT],
+    unt: UNT,
+    unz: UNZ
 )
+{
+    /**
+     * Parse an OBIS code in the additional product id (PIA) segment.
+     *
+     * The OBIS code consists of (up to) 6 group sub-identifiers marked
+     * by letters A to F. All these may or may not be present in the
+     * identifier (e.g. groups A and B are often omitted).
+     * In order to decide to which group the sub-identifier belongs,
+     * the groups are separated by unique separators:
+     *
+     *   A-B:C.D.E*F
+     *
+     *   - The A group defines the medium
+     *     (0=abstract objects, 1=electricity, 6=heat, 7=gas, 8=water, ...)
+     *   - The B group defines the channel.
+     *     Each device with multiple channels generating measurement results,
+     *     can separate the results into the channels.
+     *   - The C group defines the physical value
+     *     (current, voltage, energy, level, temperature, ...)
+     *   - The D group defines the quantity computation output of specific algorithm
+     *   - The E group specifies the measurement type defined by
+     *     groups A to D into individual measurements (e.g. switching ranges)
+     *   - The F group separates the results partly defined by groups A to E.
+     *     The typical usage is the specification of individual time ranges.
+     *
+     * Reduced ID codes (e.g. for IEC 62056-21 )
+     * To comply with the syntax defined for protocol modes A to D of IEC 62056-21, the range of ID
+     * codes is reduced to fulfil the limitations which are usually applied to the number of digits and
+     * the ASCII representation of them. All value groups are limited to a range of 0 .. 99 and within
+     * that range, to the limits given in the relevant chapters.
+     * Some value groups may be suppressed, if they are not relevant to an application:
+     *     Optional value groups: A, B, E, F
+     *     Mandatory value groups: C, D
+     * To allow the interpretation of shortened codes delimiters are
+     * inserted between all value groups:
+     *
+     *   A-B:C.D.E*F
+     *
+     * The delimiter between value groups E and F can be modified to carry some information about
+     * the source of a reset (& instead of * if the reset was performed manually).
+     * For compatibility with existing implementations, in value group A an identifier for an energy
+     * type may be used even for abstract objects.
+     *
+     * For CIM mapping could use:
+     *   Electricity metering data exchange – The DLMS/COSEM suite –
+     *   Part 6-9: Mapping between the Common Information Model message profiles
+     *   (IEC 61968-9) and DLMS/COSEM (IEC 62056) data models and protocols
+     */
+    lazy val obis: Pattern = java.util.regex.Pattern.compile ("""^((\d+)-)*((\d+):)*(\d+)\.(\d+)(\.(\d+))*(\*(\d+))*$""")
+
+    type ID = String
+    type Quantity = String
+    type Time = Calendar
+    type Period = Long
+    type Real = Double
+    type Imaginary = Double
+    type Units = String
+
+    // function that takes a measurement value to (type, real, imaginary, units)
+    type MeasurementFunctor = Double => (Quantity, Real, Imaginary, Units)
+
+    def error (message: String): MeasurementFunctor =
+        (_: Double) => (message, 0.0, 0.0, "unknown")
+
+    // avoid -0.0
+    def mul (value: Double, factor: Double): Double =
+        if (value == 0.0)
+            0.0
+        else
+            value * factor
+
+    /**
+     * Decode an OBIS code into actionable values.
+     *
+     * @param code  the OBIS code to deconstruct, e.g. 1-1?:1.29.0*255
+     * @return function to convert the quantity into a type, real, imaginary and unit
+     */
+    def decode_obis (code: String): MeasurementFunctor =
+    {
+        val matcher = obis.matcher (code)
+        if (matcher.find)
+        {
+            if (1 == matcher.group (2).toInt) // Electricity related objects
+            {
+                val channel = matcher.group (4).toInt // Channel 1
+                val quantity = matcher.group (5).toInt
+                val what = matcher.group (6).toInt
+                quantity match
+                {
+                    // active power + = ΣL i Active power+
+                    case 1 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", value * 1.0, 0.0, "W")
+                            // time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", value * 1.0, 0.0, "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // active power - = ΣL i Active power–
+                    case 2 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", mul (value, -1.0), 0.0, "W")
+                            // Time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", mul (value, -1.0), 0.0, "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // reactive power Q I = ΣL i Reactive power QI
+                    case 5 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", 0.0, value * 1.0, "W")
+                            // Time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", 0.0, value * 1.0, "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // reactive power Q II = ΣL i Reactive power QII
+                    case 6 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", 0.0, value * 1.0, "W")
+                            // Time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", 0.0, value * 1.0, "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // reactive power Q III = ΣL i Reactive power QIII
+                    case 7 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", 0.0, mul (value, -1.0), "W")
+                            // Time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", 0.0, mul (value, -1.0), "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // reactive power Q IV = ΣL i Reactive power QIV
+                    case 8 =>
+                        what match
+                        {
+                            // last average
+                            case 5 =>
+                                value: Double => ("power", 0.0, mul (value, -1.0), "W")
+                            // Time integral 1 or Time integral 5
+                            case 8 | 29 =>
+                                value: Double => ("energy", 0.0, mul (value, -1.0), "Wh")
+                            case _ =>
+                                error (s"unrecognized Value group D $what in $code")
+                        }
+                    // error
+                    case _ =>
+                        error (s"unrecognized Value group C $quantity in $code")
+                }
+            }
+            else
+                error (s"'$code' is not an electric OBIS code")
+        }
+        else
+            error (s"'$code' has an OBIS code format error")
+    }
+
+    def getReadings: List[(ID, Quantity, Time, Period, Real, Imaginary, Units)] =
+    {
+        group5.flatMap (_.group6.flatMap (
+                x =>
+                {
+                    val id = x.loc.locationIdentification.get.locationIdentifier.getOrElse ("")
+                    val readings = x.group9.get.flatMap (
+                        y =>
+                        {
+                            val pia = y.pia.get.head.itemNumberIdentification1.itemIdentifier.get
+                            val fn = decode_obis (pia)
+                            val quantities = y.group10.flatMap (_.getValue)
+                            quantities.map (
+                                z =>
+                                {
+                                    val (typ, real, imaginary, units) = fn (z._3)
+                                    (typ, z._1, z._2, real, imaginary, units)
+                                }
+                            )
+                        }
+                    )
+                    readings.map (y => (id, y._1, y._2, y._3, y._4, y._5, y._6))
+                }
+            )
+        )
+    }
+}
 
 object MSCONSMessage04B extends MSCONSMessage
 {
@@ -165,6 +400,8 @@ object MSCONSMessage04B extends MSCONSMessage
 
     lazy val group2: Parser[Option[List[Group2]]] = repAtMostN (99, false, nad ~ group3 ~ group4).? ^^
         (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case nad ~ g3 ~ g4 => Group2 (nad, g3, g4) })) else None)
+
+    lazy val uns: Parser[UNS] = expect ("UNS", x => UNS (x))
 
     lazy val group7: Parser[Option[List[Group7]]] = repAtMostN (99, false, rff ~ dtms).? ^^
         (g => if (g.isDefined && 0 < g.get.length) Some (g.get.map ({ case rff ~ dtms => Group7 (rff, dtms) })) else None)
@@ -200,8 +437,12 @@ object MSCONSMessage04B extends MSCONSMessage
     lazy val group5: Parser[List[Group5]] = repAtMostN (99999, true, nad ~ group6 ) ^^
         (g => g.map ({ case nad ~ group6 => Group5 (nad, group6) }))
 
-    lazy val uns: Parser[UNS] = expect ("UNS", x => UNS (x))
+    lazy val cnt: Parser[CNT] = expect ("CNT", x => CNT (x))
 
-    val phrase: Parser[MSCONSMessage04B] = bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns ~ group5 ^^
-        { case bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns ~ group5 => MSCONSMessage04B (bgm, dtm, cux, group1, group2, uns, group5 ) }
+    lazy val unt: Parser[UNT] = expect ("UNT", x => UNT (x))
+
+    lazy val unz: Parser[UNZ] = expect ("UNZ", x => UNZ (x))
+
+    val phrase: Parser[MSCONSMessage04B] = bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns ~ group5 ~ cnt.? ~ unt ~ unz ^^
+        { case bgm ~ dtm ~ cux ~ group1 ~ group2 ~ uns ~ group5 ~ cnt ~ unt ~ unz => MSCONSMessage04B (bgm, dtm, cux, group1, group2, uns, group5, cnt, unt, unz) }
 }
