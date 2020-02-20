@@ -142,7 +142,7 @@ class EDIFACTSuite extends FunSuite
             case message.Failure (msg, _) =>
                 fail (s"parse error: $msg")
             case message.Error (msg, _) =>
-                assert (msg.startsWith ("segment name not found"), "error message is wrong")
+                assert (msg.startsWith ("illegal segment name"), "error message is wrong")
         }
     }
 
