@@ -41,7 +41,7 @@ case class SegmentParser (una: UNA) extends Parsers
                         }
                     }
                     else
-                        Error (s"segment name not found (${name.substring (0, Math.min (20, name.length))})", in.rest)
+                        Error (s"illegal segment name (${name.substring (0, Math.min (20, name.length))})", in.rest)
             }
         }
     }

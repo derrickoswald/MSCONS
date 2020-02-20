@@ -107,7 +107,7 @@ case class Group10 (
     sts: Option[List[STS]]
 )
 {
-    def getValue: Option[(Calendar, Long, Double)] =
+    def getValue: Option[(Calendar, Int, Double)] =
     {
         val value = qty.quantity.toDouble
         if (dtm.isDefined)
@@ -117,7 +117,7 @@ case class Group10 (
             if (start.isDefined && end.isDefined)
             {
                 val s = start.get.getTime
-                Some ((s, end.get.getTime.getTimeInMillis - s.getTimeInMillis, value))
+                Some ((s, (end.get.getTime.getTimeInMillis - s.getTimeInMillis).toInt, value))
             }
             else
                 None
@@ -222,7 +222,7 @@ case class MSCONSMessage04B (
     type ID = String
     type Quantity = String
     type Time = Calendar
-    type Period = Long
+    type Period = Int
     type Real = Double
     type Imaginary = Double
     type Units = String

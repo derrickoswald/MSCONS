@@ -18,7 +18,15 @@ case class MSCONSParser (options: MSCONSOptions)
 {
     val log: Logger = LoggerFactory.getLogger (getClass)
 
-    def parse (name: String): Unit =
+    type ID = String
+    type Quantity = String
+    type Time = Calendar
+    type Period = Int
+    type Real = Double
+    type Imaginary = Double
+    type Units = String
+
+    def parse (name: String): List[(ID, Quantity, Time, Period, Real, Imaginary, Units)] =
     {
         val path = FileSystems.getDefault.getPath (name)
         val file = FileChannel.open (path, StandardOpenOption.READ)
@@ -47,28 +55,35 @@ case class MSCONSParser (options: MSCONSOptions)
                                         case MSCONSMessage04B.Success (message, rest) =>
                                             if (!rest.atEnd)
                                                 log.warn (s"message incompletely parsed, stopped at ${rest.first}")
-                                            val readings = message.getReadings
-                                            val template = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss z")
-                                            readings.map (x => println (s"${x._1} ${x._2} ${template.format (x._3.getTime)} ${x._4} ${x._5}+${x._6}j ${x._7}"))
+                                            message.getReadings
                                         case MSCONSMessage04B.Failure (message, _) =>
                                             log.error (s"parse failed '$message'")
+                                            List ()
                                         case MSCONSMessage04B.Error (message, _) =>
                                             log.error (s"parse error '$message'")
+                                            List ()
                                     }
                                 case _ =>
                                     log.error (s"${r.unh.Type} version ${r.unh.Version} release ${r.unh.Release} is not supported")
+                                    List ()
                             }
                         }
+                        else
+                            List ()
 
                     case ServiceSegmentParser.Failure (msg, _) =>
                         log.error (s"parse failure: $msg")
+                        List ()
                     case ServiceSegmentParser.Error (msg, _) =>
                         log.error (s"parse error: $msg")
+                        List ()
                 }
             case message.Failure (msg, _) =>
                 log.error (s"parse failure: $msg")
+                List ()
             case message.Error (msg, _) =>
                 log.error (s"parse error: $msg")
+                List ()
         }
     }
 }
