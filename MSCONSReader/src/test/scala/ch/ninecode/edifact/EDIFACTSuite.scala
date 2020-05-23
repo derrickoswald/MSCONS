@@ -8,6 +8,8 @@ import org.scalatest.FunSuite
 
 class EDIFACTSuite extends FunSuite
 {
+    val FILE_DEPOT = "../data/"
+
     test ("UNA 1 - default")
     {
         val scanner = SegmentScanner ("")
@@ -182,7 +184,7 @@ class EDIFACTSuite extends FunSuite
     {
         val before = System.nanoTime
 
-        val path = FileSystems.getDefault.getPath ("data/MSCONS_LG_12X-0000000858-F_12X-0000000858-F_20140314_1407300597853.txt")
+        val path = FileSystems.getDefault.getPath (s"${FILE_DEPOT}MSCONS_LG_12X-0000000858-F_12X-0000000858-F_20140314_1407300597853.txt")
         val file = FileChannel.open (path, StandardOpenOption.READ)
         val size = file.size ()
         val buffer = file.map (FileChannel.MapMode.READ_ONLY, 0L, size)

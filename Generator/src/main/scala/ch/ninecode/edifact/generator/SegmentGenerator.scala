@@ -248,6 +248,8 @@ class SegmentGenerator
         s.append (
             """}
               |""".stripMargin)
-        Files.write (Paths.get (filename), s.toString.getBytes (StandardCharsets.UTF_8))
+        val file = Paths.get (filename)
+        Files.createDirectory (file.getParent)
+        Files.write (file, s.toString.getBytes (StandardCharsets.UTF_8))
     }
 }

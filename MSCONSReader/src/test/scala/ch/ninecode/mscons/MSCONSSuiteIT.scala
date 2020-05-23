@@ -11,7 +11,7 @@ import ch.ninecode.mscons.MSCONS.main
 
 class MSCONSSuiteIT
 {
-    val FILE_DEPOT = "data/"
+    val FILE_DEPOT = "../data/"
 
     val MSCONS_FILE1 = "20191215_045127_12X-SAK-N------6_E66_12X-SAK-N------6_ESLEVU14572840_-566879393.txt"
     val MSCONS_FILE2 = "20191215_045127_12X-SAK-N------6_E66_12X-SAK-N------6_ESLEVU14572841_-1811850990.txt"
