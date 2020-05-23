@@ -1,10 +1,10 @@
 package ch.ninecode.edifact
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.Reader
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class FieldExtractor[T] extends Parsers
 {
